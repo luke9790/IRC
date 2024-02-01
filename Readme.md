@@ -29,6 +29,7 @@ Socket Types: In the context of an IRC server, we'll use TCP sockets, also known
 1.1 Create a TCP Socket
 Use the socket() function to create a new socket.
 Example: int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
 Parameters:
 AF_INET: Address family (IPv4).
 SOCK_STREAM: Socket type for TCP.
@@ -37,6 +38,7 @@ SOCK_STREAM: Socket type for TCP.
 1.2 Bind the Socket
 Assign a port to your socket with bind().
 Example: bind(server_fd, (struct sockaddr*)&address, sizeof(address));
+
 Parameters:
 server_fd: Your server's socket file descriptor.
 address: A struct sockaddr_in that contains your server's IP address and port.
@@ -45,6 +47,7 @@ The size of the address structure.
 1.3 Listen for Connections
 Put the socket in a listening state using listen().
 Example: listen(server_fd, backlog);
+
 Parameters:
 server_fd: The socket file descriptor.
 backlog: The maximum length for the queue of pending connections.
@@ -53,6 +56,7 @@ backlog: The maximum length for the queue of pending connections.
 
 Use accept() to accept incoming client connections.
 Example: int new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+
 Parameters:
 server_fd: The listening socket.
 address: Address of the incoming connection.
@@ -68,6 +72,7 @@ This allows your server to perform other tasks while waiting for client actions.
 
 Use select() to monitor multiple file descriptors.
 Example: select(max_fd + 1, &readfds, NULL, NULL, NULL);
+
 Parameters:
 max_fd: Highest file descriptor number.
 readfds: Set of file descriptors to be monitored for reading.
