@@ -78,29 +78,32 @@ max_fd: Highest file descriptor number.
 readfds: Set of file descriptors to be monitored for reading.
 
 **Step 5: Parsing Client Commands**
+
 Parse and interpret commands sent by clients:
 
 Command Parsing: Break down client messages into recognizable commands (e.g., NICK, JOIN) and parameters.
 Action Execution: Perform actions based on the parsed commands, like changing a nickname or joining a channel.
 
 **Step 6: Managing Clients and Channels**
+
 Implement classes to manage clients and channels:
 
 Client Class: Tracks each connected client's information (e.g., nickname, current channel).
 Channel Class: Manages channel-specific information (e.g., list of clients in the channel, topic).
 
 **Step 7: Handling Client Disconnections**
+
 Gracefully handle client disconnections to maintain server stability:
 
 Resource Management: Ensure proper cleanup of client-related resources upon disconnection.
 
 **Step 8: Testing and Debugging**
-Regularly test your server:
 
 Testing Scenarios: Simulate different client interactions, message loads, and connection scenarios.
 Debugging: Identify and fix issues to enhance server reliability and performance.
 
 **Step 9: Documentation and Refinement**
+
 Document your code and refine for clarity and efficiency:
 
 Code Comments: Provide clear comments and documentation within your code.
