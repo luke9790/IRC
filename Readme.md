@@ -12,7 +12,8 @@ Clients: End-users who connect to the IRC server using client software.
 Building an IRC server requires a fundamental understanding of networking concepts, particularly sockets and the TCP/IP protocol.
 
 **Sockets:**
-A socket is an endpoint in a network communication. It's like a virtual phone line that connects your application (the IRC server) with the outside world (clients).
+What is a Socket?
+In networking, a socket is an endpoint for sending or receiving data across a network. It's like a virtual phone line that connects two programs - in this case, your IRC server and its clients - over a network.
 
 TCP/IP: Your IRC server will use the TCP (Transmission Control Protocol) over IP (Internet Protocol). TCP ensures reliable, ordered delivery of a stream of bytes.
 Socket Types: In the context of an IRC server, we'll use TCP sockets, also known as stream sockets.
