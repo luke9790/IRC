@@ -18,7 +18,7 @@ IRCServ::~IRCServ(){
 
 IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
     // Create a socket
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         throw std::runtime_error("Socket creation failed");
     }
@@ -88,7 +88,7 @@ void IRCServ::run() {
                     // una volta accetta la connessione, dobbiamo rifare i passaggi precedenti e aggiungere il Client alla nostra mappa del server
                     if (new_client_fd == -1) 
                     {
-                        // DA FARE: in caso di errore di accept;
+                         std::cerr << "Error accepting connection: " << strerror(errno) << std::endl; // DA VALUTARE SE SUFFICIENTE
                     } 
                     else 
                     {

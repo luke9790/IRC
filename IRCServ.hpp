@@ -13,6 +13,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "CommandParser.hpp"
+#include <iostream>
 #include <map>
 
 
