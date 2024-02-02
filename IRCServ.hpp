@@ -24,6 +24,15 @@ public:
 
     void run();
 
+    void handleNickCommand(int clientFd, const std::vector<std::string>& params);
+    void handleJoinCommand(int clientFd, const std::vector<std::string>& params);
+    void handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params);
+    void handlePartCommand(int clientFd, const std::vector<std::string>& params);
+    void handleKickCommand(int clientFd, const std::string& channel, const std::string& user);
+    void handleInviteCommand(int clientFd, const std::string& user, const std::string& channel);
+    void handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic);
+    void handleModeCommand(int clientFd, const std::vector<std::string>& params);
+
 private:
     int port;
     std::string password;
