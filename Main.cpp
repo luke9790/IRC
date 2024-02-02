@@ -2,23 +2,24 @@
 #include <cstdlib>
 #include "IRCServ.hpp"
 
-int main(int argc, char* argv[])
+int main(int ac, char* av[])
 {
-    if (argc != 3) {
+    if (ac != 3)
+    {
         std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
-        return EXIT_FAILURE;
+        return 1;
     }
 
-    int port = std::atoi(argv[1]);
-    std::string password = argv[2];
+    int port = std::atoi(av[1]);
+    std::string password = av[2];
 
     try {
         IRCServ server(port, password);
         server.run();
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
+        return 1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }

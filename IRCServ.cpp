@@ -1,5 +1,21 @@
 #include "IRCServ.hpp"
 
+IRCServ::~IRCServ(){
+    std::map<int, Client*>::iterator it = clients.begin();
+    std::map<std::string, Channel*>::iterator it2 = channels.begin();
+
+    while(it != clients.end())
+    {
+        delete it->second;
+        it = clients.erase(it);
+    }
+    while(it2 != channels.end())
+    {
+        delete it2->second;
+        it2 = channels.erase(it2);
+    }
+}
+
 IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
     // Create a socket
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -8,23 +24,23 @@ IRCServ::IRCServ(int port, const std::string& password) : port(port), password(p
     }
 
     // Set the socket to non-blocking mode
-    fcntl(server_fd, F_SETFL, O_NONBLOCK);
+    fcntl(server_fd, F_SETFL, O_NONBLOCK); // funzione per modificare le proprieta' del socket
 
     // Address structure
     struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port);
+    memset(&address, 0, sizeof(address)); // usata per inizializzare tutti i bit a zero ed evitare problemi per il bind
+    address.sin_family = AF_INET; // setta la famiglia di indirizzi della socket a ipv4
+    address.sin_addr.s_addr = INADDR_ANY; // settiamo l'address in modo che accetti tutti gli indirizzi ip della macchina
+    address.sin_port = htons(port); // imposta la porta su cui la socket deve ascoltare
 
     // Bind the socket
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) { // associamo la socket alla struttura precedente (definiamo le connessioni e la rete)
         close(server_fd);
         throw std::runtime_error("Socket bind failed");
     }
 
     // Listen for connections
-    if (listen(server_fd, SOMAXCONN) < 0) {
+    if (listen(server_fd, SOMAXCONN) < 0) { // la socket ascolta le connessioni in entrata entro un numero massimo definito da somaxconn
         close(server_fd);
         throw std::runtime_error("Socket listen failed");
     }
@@ -45,31 +61,37 @@ IRCServ::~IRCServ() {
 }
 
 void IRCServ::run() {
-    fd_set master_set, read_fds;
+    fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
 
-    FD_ZERO(&master_set);
-    FD_SET(server_fd, &master_set);
-    max_fd = server_fd;
+    FD_ZERO(&master_set); // settiamo tutto a zero(cioe' niente da leggere)
+    FD_SET(server_fd, &master_set); // aggiungiamo il socket al master set
+    max_fd = server_fd; // ci serve per tenere traccia del fd piu' alto (necessario per select)
 
-    while (true) {
-        read_fds = master_set;
+    while (true) 
+    {
+        read_fds = master_set; // copiamo il master in read perche' select modifica i valori
 
-        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) {
+        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) { // cerca nel read se ci sono fd pronti da leggere
             throw std::runtime_error("Select error");
         }
 
-        for (int i = 0; i <= max_fd; i++) {
-            if (FD_ISSET(i, &read_fds)) {
-                if (i == server_fd) {
-                    // Handle new connections
+        for (int i = 0; i <= max_fd; i++)
+        {
+            if (FD_ISSET(i, &read_fds))
+            {
+                if (i == server_fd) // significa che ci sono nuove connessioni in entrata
+                { // Handle new connections
                     struct sockaddr_in client_addr;
                     socklen_t client_addr_len = sizeof(client_addr);
-                    int new_client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
-
-                    if (new_client_fd == -1) {
-                        // Handle accept error
-                    } else {
+                    int new_client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len); // una volta creata la struttura come in precedenza, accettiamo la connessione
+                    // una volta accetta la connessione, dobbiamo rifare i passaggi precedenti e aggiungere il Client alla nostra mappa del server
+                    if (new_client_fd == -1) 
+                    {
+                        // DA FARE: in caso di errore di accept;
+                    } 
+                    else 
+                    {
                         // Set the new socket to non-blocking mode
                         fcntl(new_client_fd, F_SETFL, O_NONBLOCK);
                         // Add new client to the map
@@ -78,18 +100,23 @@ void IRCServ::run() {
                             max_fd = new_client_fd;
                         }
                     }
-                } else {
+                } 
+                else // significa che abbiamo dati da un client esistente
+                {
                     // Handle data from clients
                     char buffer[1024];
-                    int nbytes = recv(i, buffer, sizeof(buffer), 0);
+                    int nbytes = recv(i, buffer, sizeof(buffer), 0); // leggiamo i dati
 
-                    if (nbytes <= 0) {
+                    if (nbytes <= 0) // errore o disconnessione del client
+                    {
                         // Handle disconnect or error
                         delete clients[i];
                         clients.erase(i);
                         close(i);
                         FD_CLR(i, &master_set);
-                    } else {
+                    }
+                    else // abbiamo un comando da processare
+                    {
                         // Process the received data as an IRC command
                         // This involves parsing the buffer and acting on the command
                     }

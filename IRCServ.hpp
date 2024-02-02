@@ -19,6 +19,8 @@
 class IRCServ {
 public:
     IRCServ(int port, const std::string& password);
+    ~IRCServ();
+
     void run();
 
 private:
