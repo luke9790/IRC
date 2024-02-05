@@ -2,10 +2,12 @@
 
 void Channel::addClient(Client* client) {
     // Logic to add a client to the channel
+    (void)client;
 }
 
 void Channel::removeClient(Client* client) {
     // Logic to remove a client from the channel
+    (void)client;
 }
 
 void Channel::setTopic(const std::string& topic) {

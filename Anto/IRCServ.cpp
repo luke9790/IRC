@@ -1,21 +1,5 @@
 #include "IRCServ.hpp"
 
-IRCServ::~IRCServ(){
-    std::map<int, Client*>::iterator it = clients.begin();
-    std::map<std::string, Channel*>::iterator it2 = channels.begin();
-
-    while(it != clients.end())
-    {
-        delete it->second;
-        it = clients.erase(it);
-    }
-    while(it2 != channels.end())
-    {
-        delete it2->second;
-        it2 = channels.erase(it2);
-    }
-}
-
 IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
     // Create a socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,56 +43,56 @@ IRCServ::~IRCServ() {
 }
 
 
-void IRCServ::handleNickCommand(int clientFd, const std::vector<std::string>& params) {
-    if (params.size() < 2) return; // Expecting at least one parameter after the command
-    const std::string& nick = params[1];
-    // Logic to update client's nickname
-    if (clients.find(clientFd) != clients.end()) {
-        clients[clientFd]->setNickname(nick);
-    }
-}
+// void IRCServ::handleNickCommand(int clientFd, const std::vector<std::string>& params) {
+//     if (params.size() < 2) return; // Expecting at least one parameter after the command
+//     const std::string& nick = params[1];
+//     // Logic to update client's nickname
+//     if (clients.find(clientFd) != clients.end()) {
+//         clients[clientFd]->setNickname(nick);
+//     }
+// }
 
-void IRCServ::handleJoinCommand(int clientFd, const std::vector<std::string>& params) {
-    if (params.size() < 2) return; // Expecting at least one parameter after the command
-    const std::string& channelName = params[1];
-    // Logic to add client to channel
-    if (channels.find(channelName) == channels.end()) {
-        // If channel doesn't exist, create it
-        channels[channelName] = new Channel();
-    }
-    Client* client = clients[clientFd];
-    channels[channelName]->addClient(client);
-}
+// void IRCServ::handleJoinCommand(int clientFd, const std::vector<std::string>& params) {
+//     if (params.size() < 2) return; // Expecting at least one parameter after the command
+//     const std::string& channelName = params[1];
+//     // Logic to add client to channel
+//     if (channels.find(channelName) == channels.end()) {
+//         // If channel doesn't exist, create it
+//         channels[channelName] = new Channel();
+//     }
+//     Client* client = clients[clientFd];
+//     channels[channelName]->addClient(client);
+// }
 
-void IRCServ::handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params)
-{
+// void IRCServ::handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params)
+// {
 
-}
+// }
 
-void IRCServ::handlePartCommand(int clientFd, const std::vector<std::string>& params)
-{
+// void IRCServ::handlePartCommand(int clientFd, const std::vector<std::string>& params)
+// {
 
-}
+// }
 
-void IRCServ::handleKickCommand(int clientFd, const std::string& channel, const std::string& user)
-{
+// void IRCServ::handleKickCommand(int clientFd, const std::string& channel, const std::string& user)
+// {
 
-}
+// }
 
-void IRCServ::handleInviteCommand(int clientFd, const std::string& user, const std::string& channel)
-{
+// void IRCServ::handleInviteCommand(int clientFd, const std::string& user, const std::string& channel)
+// {
 
-}
+// }
 
-void IRCServ::handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic)
-{
+// void IRCServ::handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic)
+// {
 
-}
+// }
 
-void IRCServ::handleModeCommand(int clientFd, const std::vector<std::string>& params)
-{
+// void IRCServ::handleModeCommand(int clientFd, const std::vector<std::string>& params)
+// {
 
-}
+// }
 
 
 void IRCServ::run() {
@@ -169,6 +153,7 @@ void IRCServ::run() {
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
                         if (!cmdParams.empty()) {
+                            /*
                             // Route the command to the appropriate handler
                             const std::string& cmd = cmdParams[0];
                             if (cmd == "NICK") {
@@ -193,7 +178,7 @@ void IRCServ::run() {
                                // handleModeCommand(i, cmdParams);
                             } else {
 
-                            }
+                            }*/
                         }
                     }
                 }
