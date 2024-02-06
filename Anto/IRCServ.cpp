@@ -151,35 +151,9 @@ void IRCServ::run() {
                     {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
-                        std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        if (!cmdParams.empty()) {
-                            /*
-                            // Route the command to the appropriate handler
-                            const std::string& cmd = cmdParams[0];
-                            if (cmd == "NICK") {
-                                handleNickCommand(i, cmdParams);
-                            } else if (cmd == "JOIN") {
-                                handleJoinCommand(i, cmdParams);
-                            }else if (cmd == "PRIVMSG") {
-                                handlePrivmsgCommand(i, cmdParams);
-                            } else if (cmd == "PART") {
-                                handlePartCommand(i, cmdParams);
-                            } else if (cmd == "KICK") {
-                                // richiede channel e user, da valutare
-                                // handleKickCommand(i, channel, user);
-                            } else if (cmd == "INVITE") {
-                                // richiede channel e user, da valutare
-                                // handleInviteCommand(i, user, channel);
-                            } else if (cmd == "TOPIC") {
-                                // richiede topic
-                                // handleTopicCommand(i, topic);
-                            } else if (cmd == "MODE") {
-                               //  da valutare
-                               // handleModeCommand(i, cmdParams);
-                            } else {
-
-                            }*/
-                        }
+                        std::cout << buffer << std::endl;
+                        std::string message = "CAP * LS :cap1 cap2 cap3";
+                        send(i, message.c_str(), message.length(), 0);
                     }
                 }
             }
