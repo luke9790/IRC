@@ -121,113 +121,112 @@ Codici di Risposta Numerici:
 
 Codici di Risposta Numerici:
 001 - RPL_WELCOME
-
 Questo codice viene inviato dal server per dare il benvenuto al client appena connesso.
+
 002 - RPL_YOURHOST
-
 Fornisce informazioni sull'host del server IRC al client.
+
 003 - RPL_CREATED
-
 Indica la data di creazione del server IRC.
+
 004 - RPL_MYINFO
-
 Fornisce informazioni sul server, come versione, patch, modi supportati, ecc.
+
 005 - RPL_ISUPPORT
-
 Invia una serie di opzioni supportate dal server, come estensioni del protocollo, modalità di canale, ecc.
+
 200-206 - Trace e Trace Reply
-
 Questi codici sono utilizzati per tracciare la route che il messaggio IRC sta seguendo.
+
 208 - RPL_TRACENEWTYPE
-
 Indica un nuovo tipo di connessione IRC.
+
 211 - 259 - Statistiche
-
 Questi codici forniscono informazioni statistiche sul server, come numero di utenti, operatori, link, ecc.
+
 301 - 303 - Utente inattivo, utente host e lista utenti
-
 Fornisce informazioni su utenti specifici, come stato "Away", host, e lista degli utenti online.
+
 311 - 319 - Informazioni utente e canale
-
 Fornisce informazioni dettagliate sugli utenti e sui canali.
+
 321 - 323 - Elenco canali
-
 Fornisce un elenco di canali disponibili sul server IRC.
+
 324 - RPL_CHANNELMODEIS
-
 Invia la modalità corrente di un canale IRC.
+
 331 - RPL_NOTOPIC
-
 Indica che il canale specificato non ha un argomento impostato.
+
 332 - RPL_TOPIC
-
 Invia l'argomento corrente di un canale IRC.
+
 333 - RPL_TOPICWHOTIME
-
 Fornisce informazioni sull'utente che ha impostato l'argomento e il timestamp.
+
 341 - RPL_INVITING
-
 Indica che l'utente è stato invitato con successo in un canale.
+
 342 - RPL_SUMMONING
-
 Indica che l'utente è stato chiamato con successo.
+
 351 - RPL_VERSION
-
 Invia informazioni sulla versione del server IRC.
+
 352 - RPL_WHOREPLY
-
 Fornisce informazioni sugli utenti attualmente presenti sul server.
+
 353 - RPL_NAMREPLY
-
 Fornisce l'elenco degli utenti nel canale specificato.
+
 361 - RPL_KILLDONE
-
 Indica che un kill di un utente è stato completato con successo.
+
 362 - RPL_CLOSING
-
 Indica che la connessione al server è stata chiusa.
+
 363 - RPL_CLOSEEND
-
 Indica che la fase di chiusura della connessione è stata completata.
+
 364 - RPL_LINKS
-
 Fornisce un elenco dei server collegati.
+
 365 - RPL_ENDOFLINKS
-
 Indica la fine della lista dei server collegati.
+
 366 - RPL_ENDOFNAMES
-
 Indica la fine dell'elenco degli utenti in un canale.
+
 371 - 374 - MOTD (Message of the Day)
-
 Questi codici vengono utilizzati per inviare il messaggio del giorno del server IRC.
+
 375 - RPL_MOTDSTART
-
 Indica l'inizio del messaggio del giorno del server.
+
 376 - RPL_ENDOFMOTD
-
 Indica la fine del messaggio del giorno del server.
+
 381 - RPL_YOUREOPER
-
 Indica che l'utente è stato promosso a operatore (IRCop).
+
 382 - RPL_REHASHING
-
 Indica che il server sta ri-caricando i file di configurazione.
+
 383 - RPL_YOURESERVICE
-
 Indica che l'utente è un servizio IRC.
+
 384 - RPL_MYPORTIS
-
 Indica la porta del client.
+
 385 - RPL_NOTOPERANYMORE
-
 Indica che l'utente non è più un operatore.
+
 391 - RPL_TIME
-
 Invia l'ora corrente del server IRC.
+
 392 - 395 - Elenco utenti e fine
-
 Fornisce un elenco degli utenti online e indica la fine dell'elenco.
-401 - 415 - Errori comuni
 
+401 - 415 - Errori comuni
 Questi codici indicano errori comuni che possono verificarsi durante l'interazione IRC.
