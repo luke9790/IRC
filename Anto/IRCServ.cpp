@@ -98,6 +98,7 @@ IRCServ::~IRCServ() {
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
+    int flg = 0;
 
     FD_ZERO(&master_set); // settiamo tutto a zero(cioe' niente da leggere)
     FD_SET(server_fd, &master_set); // aggiungiamo il socket al master set
@@ -152,8 +153,31 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::cout << buffer << std::endl;
-                        std::string message = "CAP * LS :cap1 cap2 cap3";
-                        send(i, message.c_str(), message.length(), 0);
+                        if (flg == 2 && buffer.find("JOIN") == std::string::npos)
+                        {
+                            std::string message = ":YourServer 001 nick :Welcome to the IRC network nick!YourUsername@YourHost\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                            message.clear();
+                            message = ":YourServer 002 nick :Your host is YourServer, running version YourServerVersion\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                            message.clear();
+                            message = ":YourServer 003 nick :This server was created YourServerCreationDate\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                            message.clear();
+                            message = ":YourServer 004 nick YourServer YourServerVersion o o\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                            message.clear();
+                            message = ":YourServer 322 nick Channel 3 :Topic\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                            message.clear();
+                            message = ":YourServer 323 nick :End of /LIST\r\n"; // Sostituisci con le capacità effettive supportate dal server
+                            send(i, message.c_str(), message.length(), 0);
+                        }
+                        else
+                        {
+                            
+                        }
+                        flg++;
                     }
                 }
             }
