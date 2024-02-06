@@ -1,4 +1,5 @@
 #include "IRCServ.hpp"
+#include "Handler.hpp"
 
 IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
     // Create a socket
@@ -41,58 +42,6 @@ IRCServ::~IRCServ() {
         delete ch_it->second;
     }
 }
-
-
-// void IRCServ::handleNickCommand(int clientFd, const std::vector<std::string>& params) {
-//     if (params.size() < 2) return; // Expecting at least one parameter after the command
-//     const std::string& nick = params[1];
-//     // Logic to update client's nickname
-//     if (clients.find(clientFd) != clients.end()) {
-//         clients[clientFd]->setNickname(nick);
-//     }
-// }
-
-// void IRCServ::handleJoinCommand(int clientFd, const std::vector<std::string>& params) {
-//     if (params.size() < 2) return; // Expecting at least one parameter after the command
-//     const std::string& channelName = params[1];
-//     // Logic to add client to channel
-//     if (channels.find(channelName) == channels.end()) {
-//         // If channel doesn't exist, create it
-//         channels[channelName] = new Channel();
-//     }
-//     Client* client = clients[clientFd];
-//     channels[channelName]->addClient(client);
-// }
-
-// void IRCServ::handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
-
-// void IRCServ::handlePartCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
-
-// void IRCServ::handleKickCommand(int clientFd, const std::string& channel, const std::string& user)
-// {
-
-// }
-
-// void IRCServ::handleInviteCommand(int clientFd, const std::string& user, const std::string& channel)
-// {
-
-// }
-
-// void IRCServ::handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic)
-// {
-
-// }
-
-// void IRCServ::handleModeCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
 
 
 void IRCServ::run() {
@@ -153,32 +102,7 @@ void IRCServ::run() {
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
                         if (!cmdParams.empty()) {
-                            /*
-                            // Route the command to the appropriate handler
-                            const std::string& cmd = cmdParams[0];
-                            if (cmd == "NICK") {
-                                handleNickCommand(i, cmdParams);
-                            } else if (cmd == "JOIN") {
-                                handleJoinCommand(i, cmdParams);
-                            }else if (cmd == "PRIVMSG") {
-                                handlePrivmsgCommand(i, cmdParams);
-                            } else if (cmd == "PART") {
-                                handlePartCommand(i, cmdParams);
-                            } else if (cmd == "KICK") {
-                                // richiede channel e user, da valutare
-                                // handleKickCommand(i, channel, user);
-                            } else if (cmd == "INVITE") {
-                                // richiede channel e user, da valutare
-                                // handleInviteCommand(i, user, channel);
-                            } else if (cmd == "TOPIC") {
-                                // richiede topic
-                                // handleTopicCommand(i, topic);
-                            } else if (cmd == "MODE") {
-                               //  da valutare
-                               // handleModeCommand(i, cmdParams);
-                            } else {
-
-                            }*/
+                           Handler::handleCommand(i, cmdParams, clients, channels);
                         }
                     }
                 }
