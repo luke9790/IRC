@@ -9,9 +9,13 @@ public:
     void setNickname(const std::string& nick);
     const std::string& getNickname() const;
 
-private:
     int socket_fd;
     std::string nickname;
+    bool isRegistered;
+    bool hasReceivedNick;
+    bool hasReceivedUser;
+
+private:
     // Add more client-specific information
 };
 
