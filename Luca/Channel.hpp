@@ -7,11 +7,14 @@
 
 class Channel {
 public:
+    Channel(std::string channelName);
+    ~Channel();
+
     void addClient(Client* client);
     void removeClient(Client* client);
     void setTopic(const std::string& topic);
     const std::string& getTopic() const;
-
+    std::vector<Client*> getClients() const;
 private:
     std::vector<Client*> clients;
     std::string topic;

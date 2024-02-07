@@ -11,6 +11,8 @@ public:
 
     int socket_fd;
     std::string nickname;
+    std::string username;
+    std::string realname;
     bool isRegistered;
     bool hasReceivedNick;
     bool hasReceivedUser;

@@ -103,8 +103,6 @@ void IRCServ::run() {
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
                         if (!cmdParams.empty()) {
                             // Ora gestisci i comandi basandoti sullo stato di registrazione del client
-                            if(!(clients[i]->isRegistered))
-                                Handler::handleNewConnection(i, cmdParams, clients, channels);
                             Handler::handleCommand(i, cmdParams, clients, channels);
                         }
                     }

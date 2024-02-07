@@ -9,12 +9,18 @@ void Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPa
     (void)channels;
 
     const std::string& cmd = cmdParams[0];
-    if (cmd == "NICK") {
+    if (cmd == "CAP") {
+        if (cmdParams.size() >= 2 && cmdParams[1] == "LS") {
+            // Rispondi con un elenco vuoto di capacità o con CAP NAK per rifiutare la richiesta
+            std::string capResponse = ":YourServer CAP * LS :\r\n"; // Elenco vuoto di capacità
+            send(client_fd, capResponse.c_str(), capResponse.length(), 0);
+        }
+    } else if (cmd == "NICK") {
         handleNickCommand(client_fd, cmdParams, clients);
     } else if (cmd == "USER") {
         handleUserCommand(client_fd, cmdParams, clients);
     } else if (cmd == "JOIN") {
-        // handleJoinCommand(client_fd, cmdParams);
+        handleJoinCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "PRIVMSG") {
         // handlePrivmsgCommand(client_fd, cmdParams);
     } else {
@@ -32,20 +38,6 @@ void Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPa
         // Send the echo back to the client
         send(client_fd, message.c_str(), message.length(), 0);
     }
-}
-
-void Handler::handleNewConnection(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    // temporaneo
-    (void)channels;
-
-    // Send initial welcome messages using client->fd and client->nickname
-    // Adjust this to fit your actual message sending logic
-    handleNickCommand(client_fd, cmdParams, clients);
-    clients[client_fd]->hasReceivedNick = true;
-    handleUserCommand(client_fd, cmdParams, clients);
-    clients[client_fd]->hasReceivedUser = true;
-    clients[client_fd]->isRegistered = true;
-    sendWelcomeMessages(client_fd, clients[client_fd]->nickname);
 }
 
 void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
@@ -82,20 +74,100 @@ void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
 
 void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
     if (cmdParams.size() < 2) {
-        // Errore: comando NICK senza parametri
+        // Potresti voler inviare un messaggio di errore al client
         return;
     }
     std::string nick = cmdParams[1];
     clients[client_fd]->nickname = nick;
+    clients[client_fd]->hasReceivedNick = true;
+
+    // Verifica se entrambi NICK e USER sono stati ricevuti
+    checkAndRegisterClient(client_fd, clients);
 }
 
 void Handler::handleUserCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
-    if (cmdParams.size() < 4) {
-        // Errore: comando USER senza abbastanza parametri
+    if (cmdParams.size() < 5) {
+        // Potresti voler inviare un messaggio di errore al client
         return;
+    }
+    std::string realname = cmdParams[4];
+    for (size_t i = 5; i < cmdParams.size(); ++i) {
+        realname += " " + cmdParams[i];
+    }
+    clients[client_fd]->realname = realname;
+    clients[client_fd]->hasReceivedUser = true;
+
+    // Verifica se entrambi NICK e USER sono stati ricevuti
+    checkAndRegisterClient(client_fd, clients);
+}
+
+void Handler::checkAndRegisterClient(int client_fd, std::map<int, Client*>& clients) {
+    Client* client = clients[client_fd];
+    if (client && client->hasReceivedNick && client->hasReceivedUser && !client->isRegistered) {
+        client->isRegistered = true;
+        sendWelcomeMessages(client_fd, client->nickname);
     }
 }
 
+void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    if (cmdParams.size() < 2) {
+        // Comando JOIN malformato, potresti inviare un messaggio di errore.
+        return;
+    }
+    std::string channelName = cmdParams[1];
+    if (channels.find(channelName) == channels.end()) {
+        channels[channelName] = new Channel(channelName); // Crea il canale se non esiste
+    }
+    Channel* channel = channels[channelName];
+    channel->addClient(clients[client_fd]); // Aggiungi il client al canale
 
-// void handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels, std::map<int, Client*>& clients);
-// void handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels, std::map<int, Client*>& clients);
+    // DA FARE: inviare una notifica nel canale dell'arrivo del nuovo utente
+}
+
+void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    if (cmdParams.size() < 2) {
+        // Potresti voler inviare un messaggio di errore al client per comando PART malformato
+        return;
+    }
+    std::string channelName = cmdParams[1];
+    if (channels.find(channelName) != channels.end()) {
+        Channel* channel = channels[channelName];
+        channel->removeClient(clients[client_fd]);
+        // Opzionale: inviare una notifica ai restanti membri del canale
+    } else {
+        // Opzionale: inviare un messaggio di errore al client per canale non trovato
+    }
+}
+
+void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    if (cmdParams.size() < 3) {
+        // Potresti voler inviare un messaggio di errore al client per comando PRIVMSG malformato
+        return;
+    }
+    std::string target = cmdParams[1];
+    std::string message = cmdParams[2];
+    for (size_t i = 3; i < cmdParams.size(); ++i) {
+        message += " " + cmdParams[i];
+    }
+
+    if (target[0] == '#') { // Il messaggio è destinato a un canale
+        if (channels.find(target) != channels.end()) {
+            Channel* channel = channels[target];
+            std::vector<Client*> clientsInChannel = channel->getClients();
+            for (size_t i = 0; i < clientsInChannel.size(); ++i) {
+                send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
+            }
+        } else {
+            // Opzionale: inviare un messaggio di errore al client per canale non trovato
+        }
+    } else { // Il messaggio è destinato a un utente singolo
+        for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+            if (it->second->getNickname() == target) {
+                send(it->second->socket_fd, message.c_str(), message.length(), 0);
+                break; // Messaggio inviato, esce dal ciclo
+            }
+        }
+        // Opzionale: gestire il caso in cui il nickname non è trovato
+    }
+}
+
