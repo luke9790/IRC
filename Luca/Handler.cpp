@@ -1,12 +1,24 @@
 #include "Handler.hpp"
 #include "IRCServ.hpp"
 
-void Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
+// Funzione per stampare i contenuti di cmdParams
+void stampaCmdParams(const std::vector<std::string>& cmdParams) {
+    std::cout << "cmdParams contiene: ";
+    for (size_t i = 0; i < cmdParams.size(); ++i) {
+        std::cout << "'" << cmdParams[i] << "' ";
+    }
+    std::cout << std::endl;
+}
+
+int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
 {
-    if (cmdParams.empty()) return;
+    if (cmdParams.empty()) return 0;
     // temporaneo
     (void)clients;
     (void)channels;
+
+    // Stampa cmdParams per debugging
+    stampaCmdParams(cmdParams);
 
     const std::string& cmd = cmdParams[0];
     if (cmd == "CAP") {
@@ -23,6 +35,17 @@ void Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPa
         handleJoinCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "PRIVMSG") {
         // handlePrivmsgCommand(client_fd, cmdParams);
+    } else if (cmd == "LIST") {
+        handleListCommand(client_fd, channels);
+    } else if (cmd == "QUIT") {
+        handleQuitCommand(client_fd, clients, channels);
+        return 1; // Segnala che il client vuole disconnettersi
+    } else if (cmd == "PING") {
+        handlePingCommand(client_fd, cmdParams);
+    } else if (cmd == "WHO") {
+        handleWhoCommand(client_fd, cmdParams);
+    } else if (cmd == "USERHOST") {
+        handleUserHostCommand(client_fd, cmdParams);
     } else {
         // Handling unrecognized commands by echoing the message back to the client
         std::string message = "Unrecognized command: ";
@@ -36,8 +59,9 @@ void Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPa
         std::cout << message << std::endl;
 
         // Send the echo back to the client
-        send(client_fd, message.c_str(), message.length(), 0);
+        // send(client_fd, message.c_str(), message.length(), 0);
     }
+    return 0;
 }
 
 void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
@@ -61,14 +85,6 @@ void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
 
     // Server version message
     message = ":" + serverName + " 004 " + nick + " " + serverName + " " + serverVersion + " o o\r\n";
-    send(client_fd, message.c_str(), message.length(), 0);
-
-    // Example for sending a channel list (this is just an example, modify as needed)
-    message = ":" + serverName + " 322 " + nick + " Channel 3 :Topic\r\n";
-    send(client_fd, message.c_str(), message.length(), 0);
-
-    // End of /LIST message
-    message = ":" + serverName + " 323 " + nick + " :End of /LIST\r\n";
     send(client_fd, message.c_str(), message.length(), 0);
 }
 
@@ -109,6 +125,56 @@ void Handler::checkAndRegisterClient(int client_fd, std::map<int, Client*>& clie
     }
 }
 
+void Handler::handlePingCommand(int client_fd, const std::vector<std::string>& cmdParams) {
+    if (cmdParams.size() >= 2) {
+        std::string pongResponse = "PONG " + cmdParams[1] + "\r\n";
+        send(client_fd, pongResponse.c_str(), pongResponse.length(), 0);
+    }
+}
+
+void Handler::handleWhoCommand(int client_fd, const std::vector<std::string>& cmdParams) {
+    // Risposta semplice per demo, adattala alle tue necessità
+    std::string whoResponse = ":YourServer 352 " + cmdParams[1] + " ...\r\n";
+    whoResponse += ":YourServer 315 " + cmdParams[1] + " :End of WHO list\r\n";
+    send(client_fd, whoResponse.c_str(), whoResponse.length(), 0);
+}
+
+void Handler::handleUserHostCommand(int client_fd, const std::vector<std::string>& cmdParams) {
+    // Risposta semplice per demo
+    (void)cmdParams;
+    std::string userhostResponse = ":YourServer 302 :userhost reply\r\n";
+    send(client_fd, userhostResponse.c_str(), userhostResponse.length(), 0);
+}
+
+void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& channels) {
+    std::string serverName = "YourServer"; // Customize with your actual server name
+    
+    // Inizia con l'invio del codice di inizio LIST
+    std::string message = ":" + serverName + " 321 " + " Channel :Users  Name\r\n";
+    send(client_fd, message.c_str(), message.length(), 0);
+
+    // Itera sui canali e invia le informazioni di ciascuno
+    for (std::map<std::string, Channel*>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
+        Channel* channel = it->second;
+        std::string channelName = channel->getName();
+        int userCount = channel->getClients().size(); // Ottieni il numero di clienti nel canale
+        std::string topic = channel->getTopic();
+
+        std::stringstream ss;
+        ss << userCount;
+        std::string userCountStr = ss.str();
+
+        // Formato: <channel> <# visible> :<topic>
+        message = ":" + serverName + " 322 " + " " + channelName + " " + userCountStr + " :" + topic + "\r\n";
+        send(client_fd, message.c_str(), message.length(), 0);
+    }
+
+    // Termina con il codice di fine LIST
+    message = ":" + serverName + " 323 " + " :End of /LIST\r\n";
+    send(client_fd, message.c_str(), message.length(), 0);
+}
+
+
 void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() < 2) {
         // Comando JOIN malformato, potresti inviare un messaggio di errore.
@@ -139,7 +205,26 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
     }
 }
 
+void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    std::map<std::string, Channel*>::iterator ch_it;
+    for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
+        Channel* channel = ch_it->second;
+        channel->removeClient(clients[client_fd]);
+        // Qui potresti inviare una notifica ai membri del canale
+    }
+
+    // Chiudi il socket
+    close(client_fd);
+    delete clients[client_fd];
+    clients.erase(client_fd);
+    // Non possiamo rimuovere client_fd da master_set qui, dovrebbe essere gestito nel server principale
+}
+
+
+
 void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    // temporaneo
+    (void)client_fd;
     if (cmdParams.size() < 3) {
         // Potresti voler inviare un messaggio di errore al client per comando PRIVMSG malformato
         return;

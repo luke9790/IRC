@@ -29,6 +29,12 @@ IRCServ::IRCServ(int port, const std::string& password) : port(port), password(p
         close(server_fd);
         throw std::runtime_error("Socket listen failed");
     }
+    // Inizializza i canali predefiniti
+    channels["generale"] = new Channel("generale");
+    channels["programmazione"] = new Channel("programmazione");
+    // Se desideri, puoi anche impostare topic predefiniti qui
+    channels["generale"]->setTopic("Benvenuti nel canale generale");
+    channels["programmazione"]->setTopic("Benvenuti nel canale di programmazione");
 }
 
 IRCServ::~IRCServ() {
@@ -101,9 +107,14 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        if (!cmdParams.empty()) {
-                            // Ora gestisci i comandi basandoti sullo stato di registrazione del client
-                            Handler::handleCommand(i, cmdParams, clients, channels);
+                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels);
+                        if (actionRequired == 1) {
+                            // Il client ha inviato il comando QUIT
+                            close(i); // Chiude il socket
+                            FD_CLR(i, &master_set); // Rimuove dal master_set
+                            delete clients[i]; // Dealloca l'oggetto Client
+                            clients.erase(i); // Rimuove dalla mappa dei client
+                            continue; // Vai al prossimo ciclo del loop
                         }
                     }
                 }
