@@ -47,7 +47,26 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "USERHOST") {
         handleUserHostCommand(client_fd, cmdParams);
     } else {
-        // Handling unrecognized commands by echoing the message back to the client
+        
+        int flg = 0;
+        std::vector<Client*> clients_ptr = Channel->getClients();
+        for (std::map<int, Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
+        {
+            if (it->first == client_fd)
+            {
+                flg = 1;
+                break;
+            }
+        }
+        if (flg)
+        {
+            Channel* channel = channels[target];
+            std::vector<Client*> clientsInChannel = channel->getClients();
+            for (size_t i = 0; i < clientsInChannel.size(); ++i) {
+                send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
+            }
+        }
+/*      // Handling unrecognized commands by echoing the message back to the client
         std::string message = "Unrecognized command: ";
         for (std::vector<std::string>::const_iterator it = cmdParams.begin(); it != cmdParams.end(); ++it) {
             message += *it + " ";
@@ -59,7 +78,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         std::cout << message << std::endl;
 
         // Send the echo back to the client
-        // send(client_fd, message.c_str(), message.length(), 0);
+        // send(client_fd, message.c_str(), message.length(), 0); */
     }
     return 0;
 }
