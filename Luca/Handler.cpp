@@ -10,7 +10,7 @@ void stampaCmdParams(const std::vector<std::string>& cmdParams) {
     std::cout << std::endl;
 }
 
-int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
+int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels, Client &client)
 {
     if (cmdParams.empty()) return 0;
     // temporaneo
@@ -47,13 +47,18 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "USERHOST") {
         handleUserHostCommand(client_fd, cmdParams);
     } else {
-        
+        std::string target;
+        std::string message = cmdParams[0];
+        for (size_t i = 1; i < cmdParams.size(); ++i) {
+            message += " " + cmdParams[i];
+        }
         int flg = 0;
-        std::vector<Client*> clients_ptr = Channel->getClients();
-        for (std::map<int, Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
+        std::vector<Client*> clients_ptr = channels[client.getChannel()]->getClients();
+        for (std::vector<Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
         {
-            if (it->first == client_fd)
+            if ((*it)->socket_fd == client_fd)
             {
+                target = (*it)->getChannel();
                 flg = 1;
                 break;
             }
