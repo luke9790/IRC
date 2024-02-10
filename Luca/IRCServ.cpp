@@ -107,7 +107,7 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels);
+                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
                         if (actionRequired == 1) {
                             // Il client ha inviato il comando QUIT
                             close(i); // Chiude il socket
