@@ -1,3 +1,5 @@
+CIAO CIAO
+
 Codici di Risposta Numerici:
 001 RPL_WELCOME
 002 RPL_YOURHOST
