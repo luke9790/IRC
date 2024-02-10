@@ -86,7 +86,7 @@ void IRCServ::run() {
                         clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
                         FD_SET(new_client_fd, &master_set); // Add to master set
                         if (new_client_fd > max_fd)
-                            max_fd = new_client_fd; // Update max if needed
+                        max_fd = new_client_fd; // Update max if needed
                     }
                 }
                 else // significa che abbiamo dati da un client esistente

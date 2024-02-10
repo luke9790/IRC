@@ -12,6 +12,7 @@ void Channel::addClient(Client* client) {
             return; // Il client è già nel canale
         }
     }
+    client->setChannel(this->name);
     clients.push_back(client); // Aggiungi il client al canale
 }
 
@@ -40,6 +41,6 @@ const std::string& Channel::getTopic() const {
     return topic;
 }
 
-std::vector<Client*> Channel::getClients() const {
+std::vector<Client*> Channel::getClients() const{
     return clients;
 }

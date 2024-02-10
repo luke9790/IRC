@@ -14,9 +14,6 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
 {
     if (cmdParams.empty()) return 0;
     // temporaneo
-    (void)clients;
-    (void)channels;
-    (void)client;
 
     // Stampa cmdParams per debugging
     stampaCmdParams(cmdParams);
@@ -37,7 +34,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "PRIVMSG") {
         // handlePrivmsgCommand(client_fd, cmdParams);
     } else if (cmd == "LIST") {
-        handleListCommand(client_fd, channels);
+        handleListCommand(client_fd, channels, clients);
     } else if (cmd == "QUIT") {
         handleQuitCommand(client_fd, clients, channels);
         return 1; // Segnala che il client vuole disconnettersi
@@ -48,42 +45,37 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "USERHOST") {
         handleUserHostCommand(client_fd, cmdParams);
     } else {
-        // std::string target;
-        // std::string message = cmdParams[0];
-        // for (size_t i = 1; i < cmdParams.size(); ++i) {
-        //     message += " " + cmdParams[i];
-        // }
-        // int flg = 0;
-        // std::vector<Client*> clients_ptr = channels[client.getChannel()]->getClients();
-        // for (std::vector<Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
-        // {
-        //     if ((*it)->socket_fd == client_fd)
-        //     {
-        //         target = (*it)->getChannel();
-        //         flg = 1;
-        //         break;
-        //     }
-        // }
-        // if (flg)
-        // {
-        //     Channel* channel = channels[target];
-        //     std::vector<Client*> clientsInChannel = channel->getClients();
-        //     for (size_t i = 0; i < clientsInChannel.size(); ++i) {
-        //         send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
-        //     }
-        // }
-        std::string message = "Unrecognized command: ";
-        for (std::vector<std::string>::const_iterator it = cmdParams.begin(); it != cmdParams.end(); ++it) {
-            message += *it + " ";
+        
+        std::string target;
+        std::string message = cmdParams[0];
+        for (size_t i = 1; i < cmdParams.size(); ++i) {
+            message += " " + cmdParams[i];
         }
-        // Ensure the message ends with a newline character
-        message += "\n";
-
-         // Log the unrecognized command
-        std::cout << message << std::endl;
-
-        // Send the echo back to the client
-        // send(client_fd, message.c_str(), message.length(), 0); 
+        int flg = 0;
+        
+        std::string channel_name = client.getChannel();
+        if (!channel_name.empty())
+        {
+            Channel *chan_ptr = channels[channel_name];
+            std::vector<Client*> clients_ptr = chan_ptr->getClients();
+            for (std::vector<Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
+            {
+                if (*it != NULL && (*it)->socket_fd == client_fd)
+                {
+                    target = (*it)->getChannel();
+                    flg = 1;
+                    break;
+                }
+            }
+            if (flg)
+            {
+                Channel* channel = channels[target];
+                std::vector<Client*> clientsInChannel = channel->getClients();
+                for (size_t i = 0; i < clientsInChannel.size(); ++i) {
+                    send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
+                }
+            }
+        }
     }
     return 0;
 }
@@ -170,11 +162,13 @@ void Handler::handleUserHostCommand(int client_fd, const std::vector<std::string
     send(client_fd, userhostResponse.c_str(), userhostResponse.length(), 0);
 }
 
-void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& channels) {
+void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& channels, std::map<int, Client*>& clients) {
     std::string serverName = "YourServer"; // Customize with your actual server name
+    std::string client_name = clients[client_fd]->getNickname();
+
     
     // Inizia con l'invio del codice di inizio LIST
-    std::string message = ":" + serverName + " 321 " + " Channel :Users  Name\r\n";
+    std::string message = ":" + serverName + " 321 " + client_name + " Channel :Users  Name\r\n";
     send(client_fd, message.c_str(), message.length(), 0);
 
     // Itera sui canali e invia le informazioni di ciascuno
@@ -187,14 +181,14 @@ void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& 
         std::stringstream ss;
         ss << userCount;
         std::string userCountStr = ss.str();
-
+    
         // Formato: <channel> <# visible> :<topic>
-        message = ":" + serverName + " 322 " + " " + channelName + " " + userCountStr + " :" + topic + "\r\n";
+        message = ":" + serverName + " 322 " + " " + client_name + " " + channelName + " " + userCountStr + " :" + topic + "\r\n";
         send(client_fd, message.c_str(), message.length(), 0);
     }
 
     // Termina con il codice di fine LIST
-    message = ":" + serverName + " 323 " + " :End of /LIST\r\n";
+    message = ":" + serverName + " 323 " + client_name + " :End of /LIST\r\n";
     send(client_fd, message.c_str(), message.length(), 0);
 }
 
@@ -205,6 +199,7 @@ void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& c
         return;
     }
     std::string channelName = cmdParams[1];
+    channelName.erase(0, 1);
     if (channels.find(channelName) == channels.end()) {
         channels[channelName] = new Channel(channelName); // Crea il canale se non esiste
     }

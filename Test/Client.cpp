@@ -1,6 +1,8 @@
 #include "Client.hpp"
 
-Client::Client(int fd) : socket_fd(fd), isRegistered(false), hasReceivedNick(false), hasReceivedUser(false) {}
+Client::Client(int fd) : socket_fd(fd), isRegistered(false), hasReceivedNick(false), hasReceivedUser(false) {
+    this->channel = "";
+}
 
 void Client::setNickname(const std::string& nick) {
     nickname = nick;
