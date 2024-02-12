@@ -30,11 +30,11 @@ IRCServ::IRCServ(int port, const std::string& password) : port(port), password(p
         throw std::runtime_error("Socket listen failed");
     }
     // Inizializza i canali predefiniti
-    channels["generale"] = new Channel("generale");
-    channels["programmazione"] = new Channel("programmazione");
+    channels["#generale"] = new Channel("#generale");
+    channels["#programmazione"] = new Channel("#programmazione");
     // Se desideri, puoi anche impostare topic predefiniti qui
-    channels["generale"]->setTopic("Benvenuti nel canale generale");
-    channels["programmazione"]->setTopic("Benvenuti nel canale di programmazione");
+    channels["#generale"]->setTopic("Benvenuti nel canale generale");
+    channels["#programmazione"]->setTopic("Benvenuti nel canale di programmazione");
 }
 
 IRCServ::~IRCServ() {
@@ -86,7 +86,7 @@ void IRCServ::run() {
                         clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
                         FD_SET(new_client_fd, &master_set); // Add to master set
                         if (new_client_fd > max_fd)
-                            max_fd = new_client_fd; // Update max if needed
+                        max_fd = new_client_fd; // Update max if needed
                     }
                 }
                 else // significa che abbiamo dati da un client esistente

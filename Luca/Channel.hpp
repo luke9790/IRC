@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "Client.hpp"
+#include <sys/socket.h>
 
 class Channel {
 public:
@@ -18,10 +19,15 @@ public:
     void setTopic(const std::string& topic);
     const std::string& getTopic() const;
     std::vector<Client*> getClients() const;
+    bool isClientInChannel(int client_fd) const;
+
+    int getUserCount() const;
+    void broadcast(const std::string& message);
 private:
     std::vector<Client*> clients;
     std::string name;
     std::string topic;
+    int userCount;
 };
 
 #endif // CHANNEL_HPP
