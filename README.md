@@ -2,7 +2,19 @@ Road map:
 
 -implementazione passwords
 
--operator auth (se operatore joina con un determinato username)
+-operator command (mettere un operatore admin, che poi da privilegi admin altri operator---poi capire se fare implementazione differenziata server/channel operator)
+
+-test private message con più client
+
+-verificare se PART è obbligatorio e se funzia.
+
+-fare topic (differenziare implementazione operator / user: operatore può cambiare topic user no)
+
+
+
+
+
+
 
 
 Codici di Risposta Numerici:
