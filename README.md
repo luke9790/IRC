@@ -1,4 +1,9 @@
-CIAO CIAO
+Road map:
+
+-implementazione passwords
+
+-operator auth (se operatore joina con un determinato username)
+
 
 Codici di Risposta Numerici:
 001 RPL_WELCOME
