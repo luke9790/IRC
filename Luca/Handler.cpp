@@ -108,15 +108,27 @@ void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
 
 void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
     if (cmdParams.size() < 2) {
-        // Potresti voler inviare un messaggio di errore al client
+        // Invia un messaggio di errore al client indicando un comando NICK malformato
+        std::string errorMsg = ":YourServer 431 :No nickname given\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
     }
-    std::string nick = cmdParams[1];
-    clients[client_fd]->nickname = nick;
-    clients[client_fd]->hasReceivedNick = true;
+    std::string newNick = cmdParams[1];
+    std::string oldNick = clients[client_fd]->getNickname();
+    std::string user = clients[client_fd]->username;
+    std::string host = "YourHost"; // Sostituisci con l'host effettivo del client se disponibile
+    if(newNick != oldNick){
+        clients[client_fd]->setNickname(newNick);
+        clients[client_fd]->hasReceivedNick = true;
+    }
 
     // Verifica se entrambi NICK e USER sono stati ricevuti
     checkAndRegisterClient(client_fd, clients);
+
+    // Notifica il cambio di nickname
+    std::string nickChangeMsg = ":" + oldNick + "!" + user + "@" + host + " NICK :" + newNick + "\r\n";
+    send(client_fd, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
+
 }
 
 void Handler::handleUserCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
