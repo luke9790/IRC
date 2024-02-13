@@ -14,7 +14,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
 {
     if (cmdParams.empty()) return 0;
     // temporaneo
-
+    (void)client;
     // Stampa cmdParams per debugging
     stampaCmdParams(cmdParams);
 
@@ -34,7 +34,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "PART") {
         handlePartCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "PRIVMSG") {
-        // handlePrivmsgCommand(client_fd, cmdParams);
+        handlePrivmsgCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "LIST") {
         handleListCommand(client_fd, channels, clients);
     } else if (cmd == "QUIT") {
@@ -47,37 +47,9 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "USERHOST") {
         handleUserHostCommand(client_fd, cmdParams);
     } else {
-        
-        std::string target;
-        std::string message = cmdParams[0];
-        for (size_t i = 1; i < cmdParams.size(); ++i) {
-            message += " " + cmdParams[i];
-        }
-        int flg = 0;
-        
-        std::string channel_name = client.getChannel();
-        if (!channel_name.empty())
-        {
-            Channel *chan_ptr = channels[channel_name];
-            std::vector<Client*> clients_ptr = chan_ptr->getClients();
-            for (std::vector<Client*>::iterator it = clients_ptr.begin(); it != clients_ptr.end(); ++it)
-            {
-                if (*it != NULL && (*it)->socket_fd == client_fd)
-                {
-                    target = (*it)->getChannel();
-                    flg = 1;
-                    break;
-                }
-            }
-            if (flg)
-            {
-                Channel* channel = channels[target];
-                std::vector<Client*> clientsInChannel = channel->getClients();
-                for (size_t i = 0; i < clientsInChannel.size(); ++i) {
-                    send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
-                }
-            }
-        }
+        // Comando non riconosciuto
+        std::string errorMsg = ":YourServer 421 " + cmdParams[0] + " :Unknown command\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
     }
     return 0;
 }
@@ -140,6 +112,7 @@ void Handler::handleUserCommand(int client_fd, const std::vector<std::string>& c
     for (size_t i = 5; i < cmdParams.size(); ++i) {
         realname += " " + cmdParams[i];
     }
+    clients[client_fd]->username = cmdParams[1];
     clients[client_fd]->realname = realname;
     clients[client_fd]->hasReceivedUser = true;
 
@@ -245,9 +218,13 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
             Client* client = clients[client_fd];
             channel->removeClient(client);
             // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
-            std::string partMessage = ":" + client->nickname + "!" + client->username + "@YourServer PART " + channelName + "\r\n";
+            char hostname[1024]; // Buffer per ospitare il nome dell'host
+            hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+            gethostname(hostname, 1023);
+            std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
             channel->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
-
+            send(client_fd, partMessage.c_str(), partMessage.length(), 0);
+            std::cout << partMessage << std::endl;
         } else {
             // Il client non è nel canale, gestisci l'errore
         }
@@ -271,11 +248,7 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
     // Non possiamo rimuovere client_fd da master_set qui, dovrebbe essere gestito nel server principale
 }
 
-
-
 void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    // temporaneo
-    (void)client_fd;
     if (cmdParams.size() < 3) {
         // Potresti voler inviare un messaggio di errore al client per comando PRIVMSG malformato
         return;
@@ -289,6 +262,14 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
     if (target[0] == '#') { // Il messaggio è destinato a un canale
         if (channels.find(target) != channels.end()) {
             Channel* channel = channels[target];
+            // Verifica se il mittente è membro del canale
+            if (!channel->isClientInChannel(client_fd)) {
+                // Se il mittente non è nel canale, potresti inviare un messaggio di errore al mittente
+                std::string errorMsg = ":YourServer 404 " + target + " :Cannot send to channel\r\n";
+                send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+                return;
+            }
+            // Inoltra il messaggio a tutti i membri del canale
             std::vector<Client*> clientsInChannel = channel->getClients();
             for (size_t i = 0; i < clientsInChannel.size(); ++i) {
                 send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
