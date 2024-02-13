@@ -4,6 +4,8 @@ Road map:
 
 -operator command (mettere un operatore admin, che poi da privilegi admin altri operator---poi capire se fare implementazione differenziata server/channel operator)
 
+-visualizzazione del client della lista utenti di un canale e se sono channel operator
+
 -test private message con più client
 
 -verificare se PART è obbligatorio e se funzia.
