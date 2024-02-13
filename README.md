@@ -12,12 +12,7 @@ Road map:
 
 -fare topic (differenziare implementazione operator / user: operatore può cambiare topic user no)
 
-
-
-
-
-
-
+-funzionamento con netcat separato
 
 Codici di Risposta Numerici:
 001 RPL_WELCOME
