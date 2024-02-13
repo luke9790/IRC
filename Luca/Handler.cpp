@@ -259,12 +259,20 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
         message += " " + cmdParams[i];
     }
 
+    // Ottieni il nickname del mittente dal client_fd
+    std::string mittenteNickname;
+    if (clients.find(client_fd) != clients.end()) {
+        mittenteNickname = clients[client_fd]->getNickname();
+    } else {
+        // Gestire il caso in cui il client_fd non è trovato nei client connessi
+        return; // o invia un messaggio di errore appropriato
+    }
+
     if (target[0] == '#') { // Il messaggio è destinato a un canale
         if (channels.find(target) != channels.end()) {
             Channel* channel = channels[target];
-            // Verifica se il mittente è membro del canale
             if (!channel->isClientInChannel(client_fd)) {
-                // Se il mittente non è nel canale, potresti inviare un messaggio di errore al mittente
+                // Se il mittente non è nel canale, invia un messaggio di errore al mittente
                 std::string errorMsg = ":YourServer 404 " + target + " :Cannot send to channel\r\n";
                 send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
                 return;
@@ -272,19 +280,24 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
             // Inoltra il messaggio a tutti i membri del canale
             std::vector<Client*> clientsInChannel = channel->getClients();
             for (size_t i = 0; i < clientsInChannel.size(); ++i) {
-                send(clientsInChannel[i]->socket_fd, message.c_str(), message.length(), 0);
+                std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " :" + message + "\r\n";
+                send(clientsInChannel[i]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
             }
         } else {
             // Opzionale: inviare un messaggio di errore al client per canale non trovato
         }
     } else { // Il messaggio è destinato a un utente singolo
+        bool destinatarioTrovato = false;
         for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
             if (it->second->getNickname() == target) {
-                send(it->second->socket_fd, message.c_str(), message.length(), 0);
+                std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " :" + message + "\r\n";
+                send(it->second->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
+                destinatarioTrovato = true;
                 break; // Messaggio inviato, esce dal ciclo
             }
         }
-        // Opzionale: gestire il caso in cui il nickname non è trovato
+        if (!destinatarioTrovato) {
+            // Opzionale: invia un messaggio di errore al mittente se il destinatario non è trovato
+        }
     }
 }
-
