@@ -22,6 +22,7 @@ public:
     bool isClientInChannel(int client_fd) const;
     void setChannelOperator(int fd_op);
     bool isOperator(int client_fd);
+    void setMode_t(bool flg);
 
     int getUserCount() const;
     void broadcast(const std::string& message);
@@ -31,6 +32,7 @@ private:
     std::string name;
     std::string topic;
     int userCount;
+    bool topic_mode;
 };
 
 #endif // CHANNEL_HPP

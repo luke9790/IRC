@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0) {
+Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0), topic_mode(false) {
     setChannelOperator(fd);
 }
 
@@ -86,4 +86,9 @@ std::vector<Client*> Channel::getClients() const{
 int Channel::getUserCount() const
 {
     return userCount;
+}
+
+void Channel::setMode_t(bool flg)
+{
+    topic_mode = flg;
 }

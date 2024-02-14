@@ -1,6 +1,20 @@
 #include "Handler.hpp"
 #include "IRCServ.hpp"
 
+void sendChannelUserList(int client_fd, Channel *channel) {
+    std::string userList;
+    std::vector<Client*> clients = channel->getClients();
+    for(size_t i = 0; i < clients.size(); i++)
+    {
+        if (i != 0)
+            userList = userList + " @" + clients[i]->getNickname();
+        else
+            userList = "@" + clients[i]->getNickname();
+    }
+    std::string response = ":YourServer 353 nickname @ " + channel->getName() + " :" + userList + "\r\n";
+    send(client_fd, response.c_str(), response.length(), 0);
+}
+
 // Funzione per stampare i contenuti di cmdParams
 void stampaCmdParams(const std::vector<std::string>& cmdParams) {
     std::cout << "cmdParams contiene: ";
@@ -53,7 +67,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "INVITE") {
         handleUserInviteCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "TOPIC") {
-        handleTopicCommand(client_fd, cmdParams, channels);
+        handleTopicCommand(client_fd, cmdParams, clients, channels);
     } else {
         // Comando non riconosciuto
         std::string errorMsg = ":YourServer 421 " + cmdParams[0] + " :Unknown command\r\n";
@@ -203,10 +217,14 @@ void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& c
     Channel* channel = channels[channelName];
     Client* client = clients[client_fd];
     channel->addClient(client);
-
-    // Formattazione corretta del messaggio di JOIN
     std::string joinMessage = ":" + client->nickname + "!" + client->username + "@YourServer JOIN " + channelName + "\r\n";
     channel->broadcast(joinMessage);
+    std::vector<Client*> clients_list = channel->getClients(); 
+    for (size_t i = 0; i < clients_list.size(); i++)
+    {
+        sendChannelUserList(clients_list[i]->socket_fd, channel);
+    } 
+    // Formattazione corretta del messaggio di JOIN
 }
 
 void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
@@ -225,6 +243,11 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
         if (channel->isClientInChannel(client_fd)) {
             Client* client = clients[client_fd];
             channel->removeClient(client);
+            std::vector<Client*> clients_list = channel->getClients(); 
+            for (size_t i = 0; i < clients_list.size(); i++)
+            {
+                sendChannelUserList(clients_list[i]->socket_fd, channel);
+            }
             // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
             char hostname[1024]; // Buffer per ospitare il nome dell'host
             hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
@@ -247,6 +270,7 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
         Channel* channel = ch_it->second;
         channel->removeClient(clients[client_fd]);
         // Qui potresti inviare una notifica ai membri del canale
+
     }
 
     // Chiudi il socket
@@ -288,8 +312,11 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
             // Inoltra il messaggio a tutti i membri del canale
             std::vector<Client*> clientsInChannel = channel->getClients();
             for (size_t i = 0; i < clientsInChannel.size(); ++i) {
-                std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " :" + message + "\r\n";
-                send(clientsInChannel[i]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
+                if (clientsInChannel[i]->socket_fd != client_fd)
+                {
+                    std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " " + message + "\r\n";
+                    send(clientsInChannel[i]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
+                }
             }
         } else {
             // Opzionale: inviare un messaggio di errore al client per canale non trovato
@@ -298,7 +325,7 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
         bool destinatarioTrovato = false;
         for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
             if (it->second->getNickname() == target) {
-                std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " :" + message + "\r\n";
+                std::string fullMessage = ":" + mittenteNickname + " PRIVMSG " + target + " " + message + "\r\n";
                 send(it->second->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
                 destinatarioTrovato = true;
                 break; // Messaggio inviato, esce dal ciclo
@@ -329,8 +356,8 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
     }
     std::vector<Client*> chnl_clients = act_chnl->getClients();
     (void)chnl_clients;
-    int i;
-    for(i = 0; chnl_clients[i]; i++)
+    size_t i;
+    for(i = 0; i < chnl_clients.size(); i++)
     {
         if (chnl_clients[i]->getNickname() == cmdParams[2])
         {
@@ -353,18 +380,36 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
         }
     // Invia il messaggio al client
+        std::string broad_msg;
         act_chnl->removeClient(chnl_clients[i]);
         send(chnl_clients[i]->socket_fd, finalMessage.c_str(), finalMessage.length(), 0);
+        std::string fullMessage;
+        for(size_t j = 0; j < chnl_clients.size(); j++)
+        {
+            if (chnl_clients[i]->socket_fd != chnl_clients[j]->socket_fd)
+            {
+                fullMessage = ":server PRIVMSG " + channel_name + " :" + chnl_clients[i]->getNickname() + " è stato tirato fuori dalle palle\r\n";
+            }
+            else
+                fullMessage = ":server PRIVMSG " + channel_name + " :sei stato tirato fuori dalle palle\r\n";
+
+            send(chnl_clients[j]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
+        }
+        std::vector<Client*> clients_list = act_chnl->getClients(); 
+        for (size_t i = 0; i < clients_list.size(); i++)
+        {
+            sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
+        }
     }
     else
     {
         std::string finalMessage;
         if(act_chnl->isOperator(client_fd))
         {    
-            finalMessage = "e un tu lo po fare ciccio, e un tussei un grande";
+            finalMessage = ":server PRIVMSG " + channel_name + " :non c'è il tipo\r\n";
         }
         else
-            finalMessage = "e un tu lo po fare ciccio, e un c'e il tipo";
+            finalMessage = ":server PRIVMSG " + channel_name + " :potresti, ma non sei il meglio\r\n";
         send(client_fd, finalMessage.c_str(), finalMessage.length(), 0);
     }
     
@@ -386,8 +431,9 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
 }
 
 
-void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels) {
+void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     (void)client_fd;
     (void)cmdParams;
     (void)channels;
+    (void)clients;
 }
