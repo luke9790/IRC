@@ -427,9 +427,9 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
 
 
 void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    if (cmdParams.size() < 3) {
-        // Errore: Parametri insufficienti
-        std::string errorMsg = ":YourServer 461 " + cmdParams[0] + " :Not enough parameters\r\n";
+    if (cmdParams.size() != 3) {
+        // Errore: Parametri sbagliati
+        std::string errorMsg = ":YourServer 461 " + cmdParams[0] + " :Wrong number of parameters. \r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
     }
