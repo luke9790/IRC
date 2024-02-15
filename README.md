@@ -12,7 +12,7 @@ Road map:
 
 -fare topic (differenziare implementazione operator / user: operatore può cambiare topic user no)
 
-
+-da modificare a bestia il join perchè se è invite only e se c'è la pw deve fare robe
 
 
 
