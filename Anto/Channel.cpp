@@ -9,6 +9,19 @@ void Channel::setChannelOperator(int fd_op)
     operators.push_back(fd_op);
 }
 
+void Channel::removeChannelOperator(int fd_op)
+{
+    std::vector<int>::iterator it;
+    for(it = operators.begin(); it != operators.end(); it++)
+    {
+        if (*it == fd_op)
+        {
+            it = operators.erase(it);
+            break;
+        }
+    }
+}
+
 Channel::~Channel() {
     // Pulizia delle risorse, se necessario
 }
@@ -91,4 +104,34 @@ int Channel::getUserCount() const
 void Channel::setMode_t(bool flg)
 {
     topic_mode = flg;
+}
+
+void Channel::setInviteOnly(bool value)
+{
+    invite_only = value;
+}
+
+void Channel::setUserLimits(int limits)
+{
+    user_limits = limits;
+}
+
+void Channel::setPassword(std::string pass)
+{
+    pwd = pass;
+}
+
+int Channel::getUserLimits()
+{
+    return user_limits;
+}
+
+std::string Channel::getPassword()
+{
+    return pwd;
+}
+
+bool Channel::getInviteOnly()
+{
+    return invite_only;
 }

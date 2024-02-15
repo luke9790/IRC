@@ -1,6 +1,16 @@
 #include "Handler.hpp"
 #include "IRCServ.hpp"
 
+bool isAllNum(std::string str)
+{
+    for(int i = 0; i < str.size(); i++)
+    {
+        if("0123456789".find(str[i]) == std::string::npos)
+            return false;
+    }
+    return true;
+}
+
 void sendChannelUserList(int client_fd, Channel *channel) {
     std::string userList;
     std::vector<Client*> clients = channel->getClients();
@@ -396,7 +406,7 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
             send(chnl_clients[j]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
         }
         std::vector<Client*> clients_list = act_chnl->getClients(); 
-        for (size_t i = 0; i < clients_list.size(); i++)
+        for (i = 0; i < clients_list.size(); i++)
         {
             sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
         }
@@ -426,8 +436,135 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
 
 void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels) {
     (void)client_fd;
-    (void)cmdParams;
     (void)channels;
+    std::string channel_name;
+    std::string cmd;
+    std::string value;
+    if(cmdParams.size() > 2)
+    {
+        channel_name = cmdParams[1];
+        channel_name.erase(0, 1);
+        if (channels[channel_name])
+        {
+            cmd = cmdParams[2];
+            if (cmd.size() == 2 && "+-".find(cmd[0]) != std::string::npos && "itkol".find(cmd[1]) != std::string::npos)
+            {
+                if(cmd[1] == 'i')
+                {
+                    if (cmdParams.size() == 3)
+                    {
+                        if (cmd[0] == '+')
+                            channels[channel_name]->setInviteOnly(true);
+                        else
+                            channels[channel_name]->setInviteOnly(false);
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if(cmd[1] == 'k')
+                {
+                    if (cmd[0] == '+')
+                        {
+                            if (cmdParams.size() == 4 && cmdParams[3].size() != 0)
+                            {
+                                channels[channel_name]->setPassword(cmdParams[3]);
+                            }
+                            else
+                            {
+                            
+                            }
+                        }
+                        else
+                        {
+                            if (cmdParams.size() == 3)
+                            {
+                                channels[channel_name]->setPassword("");
+                            }
+                            else
+                            {
+                            
+                            }
+                        }
+                }
+                else if(cmd[1] == 't')
+                {
+                     if (cmdParams.size() == 3)
+                    {
+                        if (cmd[0] == '+')
+                            channels[channel_name]->setTopic(true);
+                        else
+                            channels[channel_name]->setTopic(false);
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if(cmd[1] == 'o')
+                {
+                    if (cmdParams.size() == 4)
+                    {
+                        std::map<int, Client*>::iterator it;
+                        for(it = channels[channel_name].begin(); it != channels[channel_name].end(); it++)
+                        {
+                            if(it->second->getNickname() == cmdParams[3])
+                                break;
+                        }
+                        if (it != channels[channel_name].end())
+                        {
+                            if(cmd[0] == '+')
+                                channels[channel_name]->setChannelOperator(it->first);
+                            else
+                                channels[channel_name]->removeChannelOperator(it->first);
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                }
+                else if(cmd[1] == 'l')
+                {
+                        if (cmd[0] == '+')
+                        {
+                            if (cmdParams.size() == 4 && isAllNum(cmdParams[3]))
+                            {
+                                channels[channel_name]->setUserLimits(atoi(cmdParams[3]));
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                        else
+                        {
+                            if (cmdParams.size() == 3)
+                            {
+                                channels[channel_name]->setUserLimits(0);
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                }
+            }
+            else
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+    }
+    else
+    {
+
+    }
 }
 
 
