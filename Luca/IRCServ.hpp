@@ -2,6 +2,7 @@
 #define IRC_SERV_HPP
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdexcept>

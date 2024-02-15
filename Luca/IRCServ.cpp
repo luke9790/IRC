@@ -29,12 +29,6 @@ IRCServ::IRCServ(int port, const std::string& password) : port(port), password(p
         close(server_fd);
         throw std::runtime_error("Socket listen failed");
     }
-    // Inizializza i canali predefiniti
-    channels["#generale"] = new Channel("#generale");
-    channels["#programmazione"] = new Channel("#programmazione");
-    // Se desideri, puoi anche impostare topic predefiniti qui
-    channels["#generale"]->setTopic("Benvenuti nel canale generale");
-    channels["#programmazione"]->setTopic("Benvenuti nel canale di programmazione");
 }
 
 IRCServ::~IRCServ() {
