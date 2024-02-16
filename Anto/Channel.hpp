@@ -31,6 +31,7 @@ public:
     int getUserLimits();
     std::string getPassword();
     bool getInviteOnly();
+    bool getMode_t();
     
     bool isOperator(int client_fd);
     bool isClientInChannel(int client_fd) const;

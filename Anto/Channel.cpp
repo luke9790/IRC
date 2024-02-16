@@ -135,3 +135,8 @@ bool Channel::getInviteOnly()
 {
     return invite_only;
 }
+
+bool Channel::getMode_t()
+{
+    return topic_mode;
+}
