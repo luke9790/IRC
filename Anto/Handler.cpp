@@ -213,6 +213,7 @@ void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& 
 
 
 void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    ///controllare se nel canale c'e' la pw e se e' invite only// darti il bona se il canale ha un user limit ed e' pieno o se la pw e' a cazzo e se non sei stato invitato
     if (cmdParams.size() < 2) {
         // Comando JOIN malformato, potresti inviare un messaggio di errore.
         return;

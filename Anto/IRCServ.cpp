@@ -101,15 +101,23 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
-                        if (actionRequired == 1) {
-                            // Il client ha inviato il comando QUIT
-                            close(i); // Chiude il socket
-                            FD_CLR(i, &master_set); // Rimuove dal master_set
-                            delete clients[i]; // Dealloca l'oggetto Client
-                            clients.erase(i); // Rimuove dalla mappa dei client
-                            continue; // Vai al prossimo ciclo del loop
+                        if (/*//c'e' il comando pass)/*/)
+                        {
+                            // la pass e se non funge ti chicca senno ti fai landler.
                         }
+                        else
+                        {   
+                            int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
+                            if (actionRequired == 1) {
+                                // Il client ha inviato il comando QUIT
+                                close(i); // Chiude il socket
+                                FD_CLR(i, &master_set); // Rimuove dal master_set
+                                delete clients[i]; // Dealloca l'oggetto Client
+                                clients.erase(i); // Rimuove dalla mappa dei client
+                                continue; // Vai al prossimo ciclo del loop
+                            }
+                        }
+                        
                     }
                 }
             }

@@ -2,17 +2,9 @@ Road map:
 
 -implementazione passwords
 
--operator command (mettere un operatore admin, che poi da privilegi admin altri operator---poi capire se fare implementazione differenziata server/channel operator)
-
--visualizzazione del client della lista utenti di un canale e se sono channel operator
-
--test private message con più client
-
--verificare se PART è obbligatorio e se funzia.
-
--fare topic (differenziare implementazione operator / user: operatore può cambiare topic user no)
-
 -da modificare a bestia il join perchè se è invite only e se c'è la pw deve fare robe
+
+-funzionamento con netstat
 
 
 
