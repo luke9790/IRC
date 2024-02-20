@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "IRCServ.hpp"
+#include "Handler.hpp"
 
 int main(int ac, char* av[])
 {

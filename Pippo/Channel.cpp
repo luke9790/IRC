@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string channelName, int fd) : name(channelName), topic("TESTO TOPIC DA ELIMINARE"), userCount(0), topic_mode(false) {
+Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0), topic_mode(false) {
     setChannelOperator(fd);
 }
 
@@ -136,12 +136,7 @@ bool Channel::getInviteOnly()
     return invite_only;
 }
 
-void Channel::setTopic(const std::string& topic)
+bool Channel::getMode_t()
 {
-    this->topic = topic;
-}
-
-std::string Channel::getTopic()
-{
-    return topic;
+    return topic_mode;
 }

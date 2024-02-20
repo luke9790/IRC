@@ -1,11 +1,12 @@
 #include "Handler.hpp"
 #include "IRCServ.hpp"
 
+
 bool isAllNum(std::string str)
 {
-    for(int i = 0; i < str.size(); i++)
+    for(size_t i = 0; i < str.size(); i++)
     {
-        if("0123456789".find(str[i]) == std::string::npos)
+        if(!isdigit(str[i]))
             return false;
     }
     return true;
@@ -34,7 +35,7 @@ void stampaCmdParams(const std::vector<std::string>& cmdParams) {
     std::cout << std::endl;
 }
 
-int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels, Client &client)
+int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels, Client &client/* , IRCServ* serv */)
 {
     if (cmdParams.empty()) return 0;
     // temporaneo
@@ -53,7 +54,12 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         handleNickCommand(client_fd, cmdParams, clients);
     } else if (cmd == "USER") {
         handleUserCommand(client_fd, cmdParams, clients);
-    } else if (cmd == "JOIN") {
+    }
+    /* else if (cmd == "PASS")
+    {
+        handlePassCommand(client_fd, cmdParams, clients, serv);    
+    } */
+    else if (cmd == "JOIN") {
         handleJoinCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "PART") {
         handlePartCommand(client_fd, cmdParams, clients, channels);
@@ -213,6 +219,7 @@ void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& 
 
 
 void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    ///controllare se nel canale c'e' la pw e se e' invite only// darti il bona se il canale ha un user limit ed e' pieno o se la pw e' a cazzo e se non sei stato invitato
     if (cmdParams.size() < 2) {
         // Comando JOIN malformato, potresti inviare un messaggio di errore.
         return;
@@ -353,9 +360,6 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
     bool isInside = false;
     Channel *act_chnl;
     std::string channel_name = cmdParams[1];
-    (void)client_fd;
-    (void)cmdParams;
-    (void)clients;
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
     {
         std::cout << it->first << std::endl;
@@ -427,101 +431,174 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
 
 
 void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    (void)client_fd;
-    (void)cmdParams;
-    (void)clients;
-    (void)channels;
+    if (cmdParams.size() != 3) {
+        // Errore: Parametri sbagliati
+        std::string errorMsg = ":YourServer 461 " + cmdParams[0] + " :Wrong number of parameters. \r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    std::string targetNickname = cmdParams[1];
+    std::string channelName = cmdParams[2];
+
+    // Verifica se il canale esiste
+    if (channels.find(channelName) == channels.end()) {
+        std::string errorMsg = ":YourServer 403 " + channelName + " :No such channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    Channel* channel = channels[channelName];
+    Client* sender = clients[client_fd];
+
+    // Verifica se il mittente è nel canale
+    if (!channel->isClientInChannel(client_fd)) {
+        std::string errorMsg = ":YourServer 442 " + channelName + " :You're not on that channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    // Trova il destinatario nell'elenco dei client
+    bool found = false;
+    for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (it->second->getNickname() == targetNickname) {
+            found = true;
+            // Invia l'invito al destinatario
+            std::string inviteMsg = ":" + sender->getNickname() + "!YourHost INVITE " + targetNickname + " :" + channelName + "\r\n";
+            send(it->first, inviteMsg.c_str(), inviteMsg.length(), 0);
+
+            // Feedback al mittente
+            std::string feedbackMsg = ":YourServer 341 " + targetNickname + " " + channelName + "\r\n";
+            send(client_fd, feedbackMsg.c_str(), feedbackMsg.length(), 0);
+            break;
+        }
+    }
+
+
+    if (!found) {
+        // Utente non trovato
+        std::string errorMsg = ":YourServer 401 " + targetNickname + " :No such nick/channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+    }
 }
 
 
 void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels) {
-    (void)client_fd;
-    (void)channels;
+
     std::string channel_name;
     std::string cmd;
     std::string value;
+    std::string errorMesg;
     if(cmdParams.size() > 2)
     {
         channel_name = cmdParams[1];
         channel_name.erase(0, 1);
         if (channels[channel_name])
         {
+            std::string pm = "+-";
+            std::string cmd_mode = "itkol";
             cmd = cmdParams[2];
-            if (cmd.size() == 2 && "+-".find(cmd[0]) != std::string::npos && "itkol".find(cmd[1]) != std::string::npos)
+            if (cmd.size() == 2 && pm.find(cmd[0]) != std::string::npos && cmd_mode.find(cmd[1]) != std::string::npos)
             {
                 if(cmd[1] == 'i')
                 {
-                    if (cmdParams.size() == 3)
-                    {
-                        if (cmd[0] == '+')
-                            channels[channel_name]->setInviteOnly(true);
-                        else
-                            channels[channel_name]->setInviteOnly(false);
-                    }
-                    else
-                    {
-
-                    }
+                	if (cmdParams.size() == 3)
+                	{
+                        	if (cmd[0] == '+')
+                            		channels[channel_name]->setInviteOnly(true);
+                       		else if (cmd[0] == '-')
+                            		channels[channel_name]->setInviteOnly(false);
+                            else
+                            {
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                            }
+                	}
+                	else
+                	{
+                        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                        send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                	}
                 }
                 else if(cmd[1] == 'k')
                 {
                     if (cmd[0] == '+')
                         {
-                            if (cmdParams.size() == 4 && cmdParams[3].size() != 0)
-                            {
-                                channels[channel_name]->setPassword(cmdParams[3]);
-                            }
-                            else
-                            {
-                            
-                            }
+                        	if (cmdParams.size() == 4 && cmdParams[3].size() != 0)
+                        	{
+                               		channels[channel_name]->setPassword(cmdParams[3]);
+                        	}
+                        	else
+                        	{
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                        	}
                         }
-                        else
-                        {
-                            if (cmdParams.size() == 3)
-                            {
-                                channels[channel_name]->setPassword("");
-                            }
-                            else
-                            {
-                            
-                            }
-                        }
+                	else if (cmd[0] == '-')
+                	{
+                       		if (cmdParams.size() == 3)
+                        	{
+                        		channels[channel_name]->setPassword("");
+                        	}
+                        	else
+                 		    {
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                        	}
+                	}
+			else
+			{
+				errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+				send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+			}
                 }
                 else if(cmd[1] == 't')
                 {
                      if (cmdParams.size() == 3)
                     {
                         if (cmd[0] == '+')
-                            channels[channel_name]->setTopic(true);
-                        else
-                            channels[channel_name]->setTopic(false);
+                        	channels[channel_name]->setMode_t(true);
+                        else if (cmd[0] == '-')
+                        	channels[channel_name]->setMode_t(false);
+			else
+			{
+				errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+				send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+			}
                     }
                     else
                     {
-
+                        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                        send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                     }
                 }
                 else if(cmd[1] == 'o')
                 {
                     if (cmdParams.size() == 4)
                     {
-                        std::map<int, Client*>::iterator it;
-                        for(it = channels[channel_name].begin(); it != channels[channel_name].end(); it++)
+                        std::vector<Client*> chnlclients = channels[channel_name]->getClients();
+                        std::vector<Client*>::iterator it;
+                        for(it = chnlclients.begin(); it != chnlclients.end(); it++)
                         {
-                            if(it->second->getNickname() == cmdParams[3])
+                            if((*it)->getNickname() == cmdParams[3])
                                 break;
                         }
-                        if (it != channels[channel_name].end())
+                        if (it != chnlclients.end())
                         {
-                            if(cmd[0] == '+')
-                                channels[channel_name]->setChannelOperator(it->first);
+                        	if(cmd[0] == '+')
+                                	channels[channel_name]->setChannelOperator((*it)->socket_fd);
+                        	else if (cmd[0] == '-')
+                                            channels[channel_name]->removeChannelOperator((*it)->socket_fd);
                             else
-                                channels[channel_name]->removeChannelOperator(it->first);
+                            {
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                            }
                         }
                         else
                         {
-
+                            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         }
                     }
                 }
@@ -531,14 +608,15 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                         {
                             if (cmdParams.size() == 4 && isAllNum(cmdParams[3]))
                             {
-                                channels[channel_name]->setUserLimits(atoi(cmdParams[3]));
+                                channels[channel_name]->setUserLimits(atoi(cmdParams[3].c_str()));
                             }
                             else
                             {
-
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
                         }
-                        else
+                        else if (cmd[0] == '-')
                         {
                             if (cmdParams.size() == 3)
                             {
@@ -546,24 +624,33 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                             }
                             else
                             {
-
+                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
+                        }
+                        else
+                        {
+                            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         }
                 }
             }
             else
             {
-
+                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
             }
         }
         else
         {
-
+            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
         }
     }
     else
     {
-
+        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+        send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
     }
 }
 
@@ -594,19 +681,38 @@ void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& 
                 channel->setTopic(newTopic);
 
                 // Invia conferma al client
-                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " :" + newTopic + "\r\n";
+                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " " + newTopic + "\r\n";
                 send(client_fd, response.c_str(), response.length(), 0);
             } else {
                 // Il comando non specifica un nuovo topic, invia il topic attuale al client
                 std::string topic = channel->getTopic();
-                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " :" + topic + "\r\n";
+                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " " + topic + "\r\n";
                 send(client_fd, response.c_str(), response.length(), 0);
             }
         } else {
             // Il client non è un operatore, invia il topic attuale al client
-            std::string topic = channel->getTopic();
-            std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " :" + topic + "\r\n";
-            send(client_fd, response.c_str(), response.length(), 0);
+            if (cmdParams.size() >= 3 && channel->getMode_t()) {
+                std::string newTopic = cmdParams[2];
+                for (size_t i = 3; i < cmdParams.size(); ++i) {
+                    newTopic += " " + cmdParams[i];
+                }
+                channel->setTopic(newTopic);
+
+                // Invia conferma al client
+                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " " + newTopic + "\r\n";
+                send(client_fd, response.c_str(), response.length(), 0);
+            }
+            else if(cmdParams.size() >= 3 && !channel->getMode_t())
+            {
+
+            }
+            else
+            {
+                // Il comando non specifica un nuovo topic, invia il topic attuale al client
+                std::string topic = channel->getTopic();
+                std::string response = ":YourServer 332 " + client->getNickname() + " " + channelName + " " + topic + "\r\n";
+                send(client_fd, response.c_str(), response.length(), 0);
+            }
         }
     } else {
         // Canale non trovato, invia un messaggio di errore
@@ -615,3 +721,15 @@ void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& 
     }
 }
 
+/* void Handler::handlePassCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, IRCServ* serv) {
+    if (cmdParams.size() < 2) {
+        // Il comando è malformato, invia un messaggio di errore al client
+        return;
+    }
+    std::cout << "Password client: " << cmdParams[1] << std::endl;
+    std::cout << "Password server: " << serv->getPassword() << std::endl;
+    if(cmdParams[1] != serv->getPassword()){
+        std::string errorMsg = ":YourServer 464 " + clients[client_fd]->getNickname() + " :Password incorrect\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);   
+    }
+} */

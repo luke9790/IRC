@@ -1,6 +1,7 @@
 #include "IRCServ.hpp"
+#include "Handler.hpp"
 
-IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
+IRCServ::IRCServ(int port, const std::string& password) : port(port), password(":" + password) {
     // Create a socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
@@ -43,58 +44,6 @@ IRCServ::~IRCServ() {
 }
 
 
-// void IRCServ::handleNickCommand(int clientFd, const std::vector<std::string>& params) {
-//     if (params.size() < 2) return; // Expecting at least one parameter after the command
-//     const std::string& nick = params[1];
-//     // Logic to update client's nickname
-//     if (clients.find(clientFd) != clients.end()) {
-//         clients[clientFd]->setNickname(nick);
-//     }
-// }
-
-// void IRCServ::handleJoinCommand(int clientFd, const std::vector<std::string>& params) {
-//     if (params.size() < 2) return; // Expecting at least one parameter after the command
-//     const std::string& channelName = params[1];
-//     // Logic to add client to channel
-//     if (channels.find(channelName) == channels.end()) {
-//         // If channel doesn't exist, create it
-//         channels[channelName] = new Channel();
-//     }
-//     Client* client = clients[clientFd];
-//     channels[channelName]->addClient(client);
-// }
-
-// void IRCServ::handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
-
-// void IRCServ::handlePartCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
-
-// void IRCServ::handleKickCommand(int clientFd, const std::string& channel, const std::string& user)
-// {
-
-// }
-
-// void IRCServ::handleInviteCommand(int clientFd, const std::string& user, const std::string& channel)
-// {
-
-// }
-
-// void IRCServ::handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic)
-// {
-
-// }
-
-// void IRCServ::handleModeCommand(int clientFd, const std::vector<std::string>& params)
-// {
-
-// }
-
-
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
@@ -131,7 +80,7 @@ void IRCServ::run() {
                         clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
                         FD_SET(new_client_fd, &master_set); // Add to master set
                         if (new_client_fd > max_fd)
-                            max_fd = new_client_fd; // Update max if needed
+                        max_fd = new_client_fd; // Update max if needed
                     }
                 }
                 else // significa che abbiamo dati da un client esistente
@@ -152,37 +101,39 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        if (!cmdParams.empty()) {
-                            /*
-                            // Route the command to the appropriate handler
-                            const std::string& cmd = cmdParams[0];
-                            if (cmd == "NICK") {
-                                handleNickCommand(i, cmdParams);
-                            } else if (cmd == "JOIN") {
-                                handleJoinCommand(i, cmdParams);
-                            }else if (cmd == "PRIVMSG") {
-                                handlePrivmsgCommand(i, cmdParams);
-                            } else if (cmd == "PART") {
-                                handlePartCommand(i, cmdParams);
-                            } else if (cmd == "KICK") {
-                                // richiede channel e user, da valutare
-                                // handleKickCommand(i, channel, user);
-                            } else if (cmd == "INVITE") {
-                                // richiede channel e user, da valutare
-                                // handleInviteCommand(i, user, channel);
-                            } else if (cmd == "TOPIC") {
-                                // richiede topic
-                                // handleTopicCommand(i, topic);
-                            } else if (cmd == "MODE") {
-                               //  da valutare
-                               // handleModeCommand(i, cmdParams);
-                            } else {
+                        std::cerr << "Server Password contiene: " << getPassword() << std::endl;
+                        std::cerr << "cmdParams 1 contiene: " << cmdParams[1] << std::endl;
+                        if (cmdParams[0] == "PASS" && getPassword() != cmdParams[1])
+                        {
+                            // la pass e se non funge ti chicca senno ti fai landler.
+                            //std::cerr << "Password contiene: " << getPassword() << std::endl;
 
-                            }*/
+                            std::string errorMessage = "Invalid password\r\n";
+                            send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                            Handler::handleQuitCommand(i, clients, channels);
+                            //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
                         }
+                        else
+                        {   
+                            int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]/* , this */);
+                            if (actionRequired == 1) {
+                                // Il client ha inviato il comando QUIT
+                                close(i); // Chiude il socket
+                                FD_CLR(i, &master_set); // Rimuove dal master_set
+                                delete clients[i]; // Dealloca l'oggetto Client
+                                clients.erase(i); // Rimuove dalla mappa dei client
+                                continue; // Vai al prossimo ciclo del loop
+                            }
+                        }
+                     
                     }
                 }
             }
         }
     }
+}
+
+std::string IRCServ::getPassword()
+{
+    return password;
 }

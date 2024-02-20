@@ -2,6 +2,7 @@
 #define IRC_SERV_HPP
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdexcept>
@@ -17,6 +18,7 @@
 #include <map>
 #include <cerrno>
 
+class Handler;
 
 class IRCServ {
 public:
@@ -24,15 +26,7 @@ public:
     ~IRCServ();
 
     void run();
-
-    // void handleNickCommand(int clientFd, const std::vector<std::string>& params);
-    // void handleJoinCommand(int clientFd, const std::vector<std::string>& params);
-    // void handlePrivmsgCommand(int clientFd, const std::vector<std::string>& params);
-    // void handlePartCommand(int clientFd, const std::vector<std::string>& params);
-    // void handleKickCommand(int clientFd, const std::string& channel, const std::string& user);
-    // void handleInviteCommand(int clientFd, const std::string& user, const std::string& channel);
-    // void handleTopicCommand(int clientFd, const std::string& channel, const std::string& topic);
-    // void handleModeCommand(int clientFd, const std::vector<std::string>& params);
+    std::string getPassword();
 
 private:
     int port;

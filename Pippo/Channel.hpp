@@ -31,13 +31,12 @@ public:
     int getUserLimits();
     std::string getPassword();
     bool getInviteOnly();
+    bool getMode_t();
     
     bool isOperator(int client_fd);
-    bool isClientInChannel(int client_fd) const;    
+    bool isClientInChannel(int client_fd) const;
+    
     void broadcast(const std::string& message);
-    void setTopic(const std::string& topic);
-    std::string getTopic();
-
 private:
     std::vector<int> operators;
     std::vector<Client*> clients;
