@@ -31,12 +31,18 @@ public:
     int getUserLimits();
     std::string getPassword();
     bool getInviteOnly();
+    bool getMode_t();
     
     bool isOperator(int client_fd);
     bool isClientInChannel(int client_fd) const;
+
+    void inviteClient(int client_fd); // Invita un client al canale
+    bool isInvited(int client_fd) const; // Verifica se un client è stato invitato
+    void removeInvitedClient(int client_fd);
     
     void broadcast(const std::string& message);
 private:
+    std::vector<int> invitedClients; // serve per controllare se abbiamo invitato clients
     std::vector<int> operators;
     std::vector<Client*> clients;
     std::string name;

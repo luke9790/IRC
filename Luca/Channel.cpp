@@ -1,4 +1,25 @@
 #include "Channel.hpp"
+#include <algorithm>
+
+void Channel::inviteClient(int client_fd) {
+    // Verifica prima se il client è già stato invitato
+    if (std::find(invitedClients.begin(), invitedClients.end(), client_fd) == invitedClients.end()) {
+        invitedClients.push_back(client_fd); // Invita il client se non è già nella lista
+    }
+}
+
+bool Channel::isInvited(int client_fd) const {
+    return std::find(invitedClients.begin(), invitedClients.end(), client_fd) != invitedClients.end();
+}
+
+void Channel::removeInvitedClient(int client_fd) {
+    // Cerca l'ID del client nel vettore degli invitati
+    std::vector<int>::iterator it = std::find(invitedClients.begin(), invitedClients.end(), client_fd);
+    if (it != invitedClients.end()) {
+        // Se trovato, rimuovilo dalla lista
+        invitedClients.erase(it);
+    }
+}
 
 Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0), topic_mode(false) {
     setChannelOperator(fd);
@@ -134,4 +155,9 @@ std::string Channel::getPassword()
 bool Channel::getInviteOnly()
 {
     return invite_only;
+}
+
+bool Channel::getMode_t()
+{
+    return topic_mode;
 }
