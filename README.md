@@ -1,10 +1,8 @@
 Road map:
 
--implementazione passwords
-
--da modificare a bestia il join perchè se è invite only e se c'è la pw deve fare robe
-
--funzionamento con netstat
+- disabilitati i comandi non riconosciuti, ce ne sono troppi in fase MODE dopo alcuni comandi principali
+- in caso di quit con channel aperti va in segfault
+- funzionamento con netstat
 
 
 

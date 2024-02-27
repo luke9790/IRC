@@ -80,8 +80,11 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         handleTopicCommand(client_fd, cmdParams, clients, channels);
     } else {
         // Comando non riconosciuto
-        std::string errorMsg = ":YourServer 421 " + cmdParams[0] + " :Unknown command\r\n";
-        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        // if(!(cmd == "PASS"))
+        // {
+        //     std::string errorMsg = ":YourServer 421 " + cmdParams[0] + " :Unknown command\r\n";
+        //     send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        // }
     }
     return 0;
 }
