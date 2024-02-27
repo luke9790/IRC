@@ -26,6 +26,7 @@ public:
     ~IRCServ();
 
     void run();
+    std::string getPassword();
 
 private:
     int port;

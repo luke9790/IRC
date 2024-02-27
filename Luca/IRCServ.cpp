@@ -1,7 +1,7 @@
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
-IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
+IRCServ::IRCServ(int port, const std::string& password) : port(port), password(":" + password) {
     // Create a socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
@@ -101,11 +101,17 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        // if (/*//c'e' il comando pass)/*/)
-                        // {
-                        //     // la pass e se non funge ti chicca senno ti fai landler.
-                        // }
-                        // else
+                        if (cmdParams[0] == "PASS" && getPassword() != cmdParams[1])
+                        {
+                            // la pass e se non funge ti chicca senno ti fai landler.
+                            //std::cerr << "Password contiene: " << getPassword() << std::endl;
+
+                            std::string errorMessage = "Invalid password\r\n";
+                            send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                            Handler::handleQuitCommand(i, clients, channels);
+                            //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
+                        }
+                        else
                         {   
                             int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
                             if (actionRequired == 1) {
@@ -123,4 +129,9 @@ void IRCServ::run() {
             }
         }
     }
+}
+
+std::string IRCServ::getPassword()
+{
+    return password;
 }
