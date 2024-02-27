@@ -40,7 +40,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     // temporaneo
     (void)client;
     // Stampa cmdParams per debugging
-    stampaCmdParams(cmdParams);
+    //stampaCmdParams(cmdParams);
 
     const std::string& cmd = cmdParams[0];
     if (cmd == "CAP") {
@@ -533,7 +533,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
         if (channels[channel_name])
         {
             std::string pm = "+-";
-            std::string cmd_mode = "itkol";
+            std::string cmd_mode = "itkolb";
             cmd = cmdParams[2];
             if (cmd.size() == 2 && pm.find(cmd[0]) != std::string::npos && cmd_mode.find(cmd[1]) != std::string::npos)
             {
@@ -547,13 +547,13 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                             		channels[channel_name]->setInviteOnly(false);
                             else
                             {
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
                 	}
                 	else
                 	{
-                        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                        errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                         send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                 	}
                 }
@@ -567,7 +567,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                         	}
                         	else
                         	{
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         	}
                         }
@@ -579,15 +579,15 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                         	}
                         	else
                  		    {
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         	}
                 	}
-			else
-			{
-				errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
-				send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
-			}
+                    else
+                    {
+                        errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
+                        send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                    }
                 }
                 else if(cmd[1] == 't')
                 {
@@ -597,15 +597,15 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                         	channels[channel_name]->setMode_t(true);
                         else if (cmd[0] == '-')
                         	channels[channel_name]->setMode_t(false);
-			else
-			{
-				errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
-				send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
-			}
+                        else
+                        {
+                            errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
+                            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+                        }
                     }
                     else
                     {
-                        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                        errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                         send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                     }
                 }
@@ -628,13 +628,13 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                                             channels[channel_name]->removeChannelOperator((*it)->socket_fd);
                             else
                             {
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
                         }
                         else
                         {
-                            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                            errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         }
                     }
@@ -649,7 +649,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                             }
                             else
                             {
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
                         }
@@ -661,32 +661,32 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                             }
                             else
                             {
-                                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                             }
                         }
                         else
                         {
-                            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                            errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         }
                 }
             }
             else
             {
-                errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+                errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
                 send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
             }
         }
         else
         {
-            errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+            errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
         }
     }
     else
     {
-        errorMesg = ":server PRIVMSG " + channel_name + " :t'hai sbagliato a scrivere ciccio\r\n";
+        errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
         send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
     }
 }

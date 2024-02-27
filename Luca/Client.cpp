@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client(int fd) : socket_fd(fd), isRegistered(false), hasReceivedNick(false), hasReceivedUser(false) {
+Client::Client(int fd) : socket_fd(fd), isRegistered(false), hasReceivedNick(false), hasReceivedUser(false), isjoin(0) {
     this->channel = "";
 }
 
@@ -16,4 +16,13 @@ const std::string& Client::getNickname() const {
 
 const std::string& Client::getChannel() const {
     return channel;
+}
+
+
+void Client::setIsJoin(){
+    isjoin++;
+}
+
+int Client::getIsJoin() {
+    return isjoin;
 }

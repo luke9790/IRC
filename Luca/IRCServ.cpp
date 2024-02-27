@@ -1,8 +1,12 @@
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
-IRCServ::IRCServ(int port, const std::string& password) : port(port), password(":" + password) {
+IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
     // Create a socket
+    if (pwd == "")
+        password = pwd;
+    else
+        password = ":" + pwd;
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         throw std::runtime_error("Socket creation failed");
@@ -100,16 +104,26 @@ void IRCServ::run() {
                     {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
+                        clients[i]->setIsJoin();
                         std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        if (cmdParams[0] == "PASS" && getPassword() != cmdParams[1])
+                        std::cout << "cmdParams contiene: ";
+                        for (size_t i = 0; i < cmdParams.size(); ++i) {
+                            std::cout << "'" << cmdParams[i] << "' ";
+                        }
+                        std::cout << std::endl;
+                        if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS"))
                         {
                             // la pass e se non funge ti chicca senno ti fai landler.
                             //std::cerr << "Password contiene: " << getPassword() << std::endl;
 
                             std::string errorMessage = "Invalid password\r\n";
                             send(i, errorMessage.c_str(), errorMessage.size(), 0);
-                            Handler::handleQuitCommand(i, clients, channels);
                             //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
+                            close(i); // Chiude il socket
+                            FD_CLR(i, &master_set); // Rimuove dal master_set
+                            delete clients[i]; // Dealloca l'oggetto Client
+                            clients.erase(i); // Rimuove dalla mappa dei client
+                            continue; // Vai al prossimo ciclo del loop
                         }
                         else
                         {   

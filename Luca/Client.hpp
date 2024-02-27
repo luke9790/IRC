@@ -10,6 +10,8 @@ public:
     const std::string& getNickname() const;
     void setChannel(std::string chan);
     const std::string& getChannel() const;
+    void setIsJoin();
+    int getIsJoin();
 
     int socket_fd;
     std::string nickname;
@@ -19,6 +21,7 @@ public:
     bool isRegistered;
     bool hasReceivedNick;
     bool hasReceivedUser;
+    int isjoin;
 
 private:
     // Add more client-specific information
