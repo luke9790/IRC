@@ -59,14 +59,13 @@ void Channel::addClient(Client* client) {
 }
 
 void Channel::removeClient(Client* client) {
-    for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
-        if (*it == client) {
-            clients.erase(it); // Rimuovi il client dal canale
-            userCount--;
-            break;
-        }
+    std::vector<Client*>::iterator it = std::find(clients.begin(), clients.end(), client);
+    if (it != clients.end()) {
+        clients.erase(it);
+        userCount--;
     }
 }
+
 
 
 bool Channel::isOperator(int client_fd)

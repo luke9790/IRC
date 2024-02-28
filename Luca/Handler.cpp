@@ -16,10 +16,18 @@ void sendChannelUserList(int client_fd, Channel *channel) {
     std::vector<Client*> clients = channel->getClients();
     for(size_t i = 0; i < clients.size(); i++)
     {
-        if (i != 0)
-            userList = userList + " @" + clients[i]->getNickname();
-        else
-            userList = "@" + clients[i]->getNickname();
+        if (channel->isOperator(clients[i]->socket_fd))
+	{
+            if (i != 0)
+                userList = userList + " @" + clients[i]->getNickname();
+            else
+                userList = "@" + clients[i]->getNickname();
+        } else {
+            if (i != 0)
+                userList = userList + " " + clients[i]->getNickname();
+            else
+                userList = clients[i]->getNickname();
+	}
     }
     std::string response = ":YourServer 353 nickname @ " + channel->getName() + " :" + userList + "\r\n";
     send(client_fd, response.c_str(), response.length(), 0);
@@ -318,15 +326,19 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
     std::map<std::string, Channel*>::iterator ch_it;
     for (ch_it = channels.begin(); ch_it != channels.end(); ch_it++) {
         Channel* channel = ch_it->second;
-        channel->removeClient(clients[client_fd]);
+        channel->removeClient(clients.find(client_fd)->second);
         // Qui potresti inviare una notifica ai membri del canale
-
     }
 
     // Chiudi il socket
     close(client_fd);
-    delete clients[client_fd];
-    clients.erase(client_fd);
+
+    // Elimina il cliente e rimuovilo dalla mappa dei clienti
+    std::map<int, Client*>::iterator client_it = clients.find(client_fd);
+    if (client_it != clients.end()) {
+        delete client_it->second;
+        clients.erase(client_it);
+    }
     // Non possiamo rimuovere client_fd da master_set qui, dovrebbe essere gestito nel server principale
 }
 
@@ -399,9 +411,10 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
         if (it->second->getName() == channel_name)
         {
             act_chnl = it->second;
+            break;
         }
-        std::cout << "diocane" << std::endl;
     }
+    std::cout << "diocane" << std::endl;
     std::vector<Client*> chnl_clients = act_chnl->getClients();
     size_t i;
     for(i = 0; i < chnl_clients.size(); i++)
