@@ -194,7 +194,7 @@ void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& 
     send(client_fd, message.c_str(), message.length(), 0);
 
     // Itera sui canali e invia le informazioni di ciascuno
-    for (std::map<std::string, Channel*>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
+    for (std::map<std::string, Channel*>::const_iterator it = channels.begin(); it != channels.end(); it++) {
         Channel* channel = it->second;
         std::string channelName = channel->getName();
         int userCount = channel->getUserCount();
@@ -316,7 +316,7 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
 
 void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     std::map<std::string, Channel*>::iterator ch_it;
-    for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
+    for (ch_it = channels.begin(); ch_it != channels.end(); ch_it++) {
         Channel* channel = ch_it->second;
         channel->removeClient(clients[client_fd]);
         // Qui potresti inviare una notifica ai membri del canale
@@ -391,7 +391,7 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
 void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     
     bool isInside = false;
-    Channel *act_chnl;
+    Channel *act_chnl = NULL;
     std::string channel_name = cmdParams[1];
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
     {
@@ -400,9 +400,9 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
         {
             act_chnl = it->second;
         }
+        std::cout << "diocane" << std::endl;
     }
     std::vector<Client*> chnl_clients = act_chnl->getClients();
-    (void)chnl_clients;
     size_t i;
     for(i = 0; i < chnl_clients.size(); i++)
     {
@@ -689,8 +689,19 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
     }
     else
     {
-        errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
-        send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+        
+        channel_name = cmdParams[1];
+        channel_name.erase(0, 1);
+        if (channels[channel_name])
+        {
+            //invia mode del canale
+        }
+        else
+        {
+            errorMesg = ":YourServer 421 " + channel_name + " :Unknown channel\r\n";
+            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+        }
+        
     }
 }
 
