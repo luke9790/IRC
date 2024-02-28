@@ -3,7 +3,7 @@ Road map:
 - disabilitati i comandi non riconosciuti, ce ne sono troppi in fase MODE dopo alcuni comandi principali
 
 - uselist aggiornata per ogni evento
-- da fare mod nome canale
+- da fare mode nome canale
 
 - funzionamento con netstat
 
