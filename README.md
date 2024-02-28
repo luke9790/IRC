@@ -1,7 +1,10 @@
 Road map:
 
 - disabilitati i comandi non riconosciuti, ce ne sono troppi in fase MODE dopo alcuni comandi principali
-- in caso di quit con channel aperti va in segfault
+
+- uselist aggiornata per ogni evento
+- da fare mod nome canale
+
 - funzionamento con netstat
 
 
