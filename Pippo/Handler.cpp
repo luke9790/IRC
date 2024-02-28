@@ -281,19 +281,24 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
     }
 }
 
+
 void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     std::map<std::string, Channel*>::iterator ch_it;
     for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
         Channel* channel = ch_it->second;
-        channel->removeClient(clients[client_fd]);
+        channel->removeClient(clients.find(client_fd)->second);
         // Qui potresti inviare una notifica ai membri del canale
-
     }
 
     // Chiudi il socket
     close(client_fd);
-    delete clients[client_fd];
-    clients.erase(client_fd);
+
+    // Elimina il cliente e rimuovilo dalla mappa dei clienti
+    std::map<int, Client*>::iterator client_it = clients.find(client_fd);
+    if (client_it != clients.end()) {
+        delete client_it->second;
+        clients.erase(client_it);
+    }
     // Non possiamo rimuovere client_fd da master_set qui, dovrebbe essere gestito nel server principale
 }
 
