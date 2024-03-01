@@ -26,3 +26,16 @@ void Client::setIsJoin(){
 int Client::getIsJoin() {
     return isjoin;
 }
+
+void Client::mergeBuffer(char *client_buffer)
+{
+    buffer = buffer + client_buffer;
+}
+void Client::clearBuffer()
+{
+    buffer.clear();
+}
+std::string Client::getBuffer()
+{
+    return buffer;
+}

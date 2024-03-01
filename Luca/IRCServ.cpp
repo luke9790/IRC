@@ -1,6 +1,14 @@
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
+bool isCompleteMessage(const std::string& buffer) {
+    // Cerca la posizione del carattere di ritorno a capo seguito dall'avanti a capo
+    size_t crlfPos = buffer.find("\n");
+
+    // Se troviamo il \r\n, il messaggio è completo
+    return crlfPos != std::string::npos;
+}
+
 IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
     // Create a socket
     if (pwd == "")
@@ -51,6 +59,7 @@ IRCServ::~IRCServ() {
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
+    std::string client_buff;
 
     FD_ZERO(&master_set); // settiamo tutto a zero(cioe' niente da leggere)
     FD_SET(server_fd, &master_set); // aggiungiamo il socket al master set
@@ -105,36 +114,45 @@ void IRCServ::run() {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
                         clients[i]->setIsJoin();
-                        std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        std::cout << "cmdParams contiene: ";
-                        for (size_t i = 0; i < cmdParams.size(); ++i) {
-                            std::cout << "'" << cmdParams[i] << "' ";
-                        }
-                        std::cout << std::endl;
-                        if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS"))
-                        {
-                            // la pass e se non funge ti chicca senno ti fai landler.
-                            //std::cerr << "Password contiene: " << getPassword() << std::endl;
+                        clients[i]->mergeBuffer(buffer); 
+                        client_buff = clients[i]->getBuffer();
 
-                            std::string errorMessage = "Invalid password\r\n";
-                            send(i, errorMessage.c_str(), errorMessage.size(), 0);
-                            //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
-                            close(i); // Chiude il socket
-                            FD_CLR(i, &master_set); // Rimuove dal master_set
-                            delete clients[i]; // Dealloca l'oggetto Client
-                            clients.erase(i); // Rimuove dalla mappa dei client
-                            continue; // Vai al prossimo ciclo del loop
-                        }
-                        else
-                        {   
-                            int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
-                            if (actionRequired == 1) {
-                                // Il client ha inviato il comando QUIT
+                        std::cout << client_buff << " c buff " << buffer << " buff " << std::endl;
+                        if(isCompleteMessage(client_buff))
+                        {
+                            std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));
+                            std::cout << "cmdParams contiene: ";
+                            for (size_t i = 0; i < cmdParams.size(); ++i) {
+                                std::cout << "'" << cmdParams[i] << "' ";
+                            }
+                            std::cout << std::endl;
+                            if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS"))
+                            {
+                                // la pass e se non funge ti chicca senno ti fai landler.
+                                //std::cerr << "Password contiene: " << getPassword() << std::endl;
+
+                                std::string errorMessage = "Invalid password\r\n";
+                                send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                                //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
                                 close(i); // Chiude il socket
                                 FD_CLR(i, &master_set); // Rimuove dal master_set
                                 delete clients[i]; // Dealloca l'oggetto Client
                                 clients.erase(i); // Rimuove dalla mappa dei client
                                 continue; // Vai al prossimo ciclo del loop
+                            }
+                            else
+                            {   
+                        
+                                int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
+                                if (actionRequired == 1) {
+                                    // Il client ha inviato il comando QUIT
+                                    close(i); // Chiude il socket
+                                    FD_CLR(i, &master_set); // Rimuove dal master_set
+                                    delete clients[i]; // Dealloca l'oggetto Client
+                                    clients.erase(i); // Rimuove dalla mappa dei client
+                                    continue; // Vai al prossimo ciclo del loop
+                                }
+                                clients[i]->clearBuffer();
                             }
                         }
                         

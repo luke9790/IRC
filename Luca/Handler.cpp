@@ -17,7 +17,7 @@ void sendChannelUserList(int client_fd, Channel *channel) {
     for(size_t i = 0; i < clients.size(); i++)
     {
         if (channel->isOperator(clients[i]->socket_fd))
-	{
+	    {
             if (i != 0)
                 userList = userList + " @" + clients[i]->getNickname();
             else
@@ -27,7 +27,7 @@ void sendChannelUserList(int client_fd, Channel *channel) {
                 userList = userList + " " + clients[i]->getNickname();
             else
                 userList = clients[i]->getNickname();
-	}
+	    }
     }
     std::string response = ":YourServer 353 nickname @ " + channel->getName() + " :" + userList + "\r\n";
     send(client_fd, response.c_str(), response.length(), 0);
