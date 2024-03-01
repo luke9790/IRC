@@ -1,9 +1,8 @@
 Road map:
 
-- disabilitati i comandi non riconosciuti, ce ne sono troppi in fase MODE dopo alcuni comandi principali
+- uselist aggiornata per ogni evento (NON FUNZIONA DI GIA?)
 
-- uselist aggiornata per ogni evento
-- da fare mode nome canale
+- da fare mode nome canale (FATTO)
 
 - funzionamento con netstat
 

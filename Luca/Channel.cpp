@@ -5,7 +5,7 @@
 std::string Channel::getCurrentModes() const {
     std::string modes = "+"; // Inizia sempre con un segno + per indicare le modalità attive
     std::stringstream ss;
-    
+
     if (topic_mode) {
         modes += "t"; // Il topic del canale può essere modificato solo dagli operatori
     }
@@ -24,10 +24,6 @@ std::string Channel::getCurrentModes() const {
         ss << user_limits;
         modes += " " + ss.str(); // Converti il numero in stringa e aggiungilo
     }
-
-
-    // Nota: La modalità 'k' (password) di solito non include la password stessa nel messaggio MODE per motivi di sicurezza.
-    // Se vuoi indicare che la modalità 'k' è attiva senza rivelare la password, basta aggiungere 'k' senza ulteriori dettagli.
 
     return modes;
 }
