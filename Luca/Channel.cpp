@@ -1,5 +1,37 @@
 #include "Channel.hpp"
 #include <algorithm>
+#include <sstream>
+
+std::string Channel::getCurrentModes() const {
+    std::string modes = "+"; // Inizia sempre con un segno + per indicare le modalità attive
+    std::stringstream ss;
+    
+    if (topic_mode) {
+        modes += "t"; // Il topic del canale può essere modificato solo dagli operatori
+    }
+    if (invite_only) {
+        modes += "i"; // Il canale è impostato come solo su invito
+    }
+    if (user_limits > 0) {
+        modes += "l"; // Esiste un limite di utenti per il canale
+    }
+    if (!pwd.empty()) {
+        modes += "k"; // Il canale è protetto da password
+    }
+
+    // Aggiungi i parametri delle modalità dopo le lettere delle modalità, se necessario
+    if (user_limits > 0) {
+        ss << user_limits;
+        modes += " " + ss.str(); // Converti il numero in stringa e aggiungilo
+    }
+
+
+    // Nota: La modalità 'k' (password) di solito non include la password stessa nel messaggio MODE per motivi di sicurezza.
+    // Se vuoi indicare che la modalità 'k' è attiva senza rivelare la password, basta aggiungere 'k' senza ulteriori dettagli.
+
+    return modes;
+}
+
 
 void Channel::inviteClient(int client_fd) {
     // Verifica prima se il client è già stato invitato

@@ -414,7 +414,6 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
             break;
         }
     }
-    std::cout << "diocane" << std::endl;
     std::vector<Client*> chnl_clients = act_chnl->getClients();
     size_t i;
     for(i = 0; i < chnl_clients.size(); i++)
@@ -545,7 +544,6 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
     if(cmdParams.size() > 2)
     {
         channel_name = cmdParams[1];
-        channel_name.erase(0, 1);
         if (channels[channel_name])
         {
             std::string pm = "+-";
@@ -687,6 +685,10 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
                         }
                 }
+                else if(cmd[1] == 'b'){
+                        std::string endOfBanListMsg = ":YourServer 368 " + cmdParams[0] + " " + channel_name + " :End of channel ban list\r\n";
+                        send(client_fd, endOfBanListMsg.c_str(), endOfBanListMsg.length(), 0);
+                }
             }
             else
             {
@@ -696,18 +698,21 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
         }
         else
         {
-            errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
+            errorMesg = ":YourServer 421 " + channel_name + " :Unknown\r\n";
             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
         }
     }
     else
     {
-        
         channel_name = cmdParams[1];
-        channel_name.erase(0, 1);
         if (channels[channel_name])
         {
-            //invia mode del canale
+            // Il canale esiste, ottieni le sue modalità correnti
+            std::cout << "Eccoci" <<std::endl;
+            std::string currentModes = channels[channel_name]->getCurrentModes(); // restituisce una stringa con le modalità attive
+            std::string modeResponse = ":YourServer 324 " + cmdParams[0] + " " + channel_name + " " + currentModes + "\r\n";
+            std::cout << modeResponse << std::endl;
+            send(client_fd, modeResponse.c_str(), modeResponse.length(), 0);
         }
         else
         {
