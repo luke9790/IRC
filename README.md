@@ -1,6 +1,6 @@
 Road map:
 
-- uselist aggiornata per ogni evento (NON FUNZIONA DI GIA?)
+- uselist aggiornata per ogni evento (FATTO)
 
 - da fare mode nome canale (FATTO)
 
