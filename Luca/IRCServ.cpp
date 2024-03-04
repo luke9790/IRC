@@ -117,7 +117,6 @@ void IRCServ::run() {
                         clients[i]->mergeBuffer(buffer); 
                         client_buff = clients[i]->getBuffer();
 
-                        std::cout << client_buff << " c buff " << buffer << " buff " << std::endl;
                         if(isCompleteMessage(client_buff))
                         {
                             std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));
