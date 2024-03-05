@@ -4,10 +4,12 @@ Road map:
 
 - da fare mode nome canale (FATTO)
 
-- funzionamento con netstat
 
+-topic da aggiustare messaggi di "errore"
 
+-USER e NICK da aggiustare 
 
+-in generale mettere messaggi di risposta ai comandi
 
 
 

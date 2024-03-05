@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 std::string Channel::getCurrentModes() const {
     std::string modes = "+"; // Inizia sempre con un segno + per indicare le modalità attive

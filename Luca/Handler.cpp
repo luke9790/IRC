@@ -80,6 +80,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         handleUserHostCommand(client_fd, cmdParams);
     } else if (cmd == "KICK") {
         handleUserKickCommand(client_fd, cmdParams, clients, channels);
+        sendChannelUserList(client_fd, channels[clients[client_fd]->getChannel()]);
     } else if (cmd == "MODE") {
         handleModeCommand(client_fd, cmdParams, channels);
     } else if (cmd == "INVITE") {
@@ -438,26 +439,24 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
         {
             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
         }
-    // Invia il messaggio al client
-        std::string broad_msg;
-        act_chnl->removeClient(chnl_clients[i]);
-        send(chnl_clients[i]->socket_fd, finalMessage.c_str(), finalMessage.length(), 0);
-        std::string fullMessage;
-        for(size_t j = 0; j < chnl_clients.size(); j++)
-        {
-            if (chnl_clients[i]->socket_fd != chnl_clients[j]->socket_fd)
+        if (act_chnl->isClientInChannel(chnl_clients[i]->socket_fd)) {
+            Client* client = clients[chnl_clients[i]->socket_fd];
+            char hostname[1024]; // Buffer per ospitare il nome dell'host
+            hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+            gethostname(hostname, 1023);
+            std::string partMessage = ":" + chnl_clients[client_fd]->getNickname() + "!" + chnl_clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
+            send(client->socket_fd, partMessage.c_str(), partMessage.length(), 0);
+            act_chnl->removeClient(client);
+            std::vector<Client*> clients_list = act_chnl->getClients(); 
+            for (size_t i = 0; i < clients_list.size(); i++)
             {
-                fullMessage = ":server PRIVMSG " + channel_name + " :" + chnl_clients[i]->getNickname() + " è stato tirato fuori dalle palle\r\n";
+                sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
             }
-            else
-                fullMessage = ":server PRIVMSG " + channel_name + " :sei stato tirato fuori dalle palle\r\n";
-
-            send(chnl_clients[j]->socket_fd, fullMessage.c_str(), fullMessage.length(), 0);
-        }
-        std::vector<Client*> clients_list = act_chnl->getClients(); 
-        for (i = 0; i < clients_list.size(); i++)
-        {
-            sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
+            // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
+            act_chnl->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
+            std::cout << partMessage << std::endl;
+        } else {
+            // Il client non è nel canale, gestisci l'errore
         }
     }
     else
@@ -629,17 +628,47 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                     {
                         std::vector<Client*> chnlclients = channels[channel_name]->getClients();
                         std::vector<Client*>::iterator it;
+                        std::vector<Client*>::iterator op;
                         for(it = chnlclients.begin(); it != chnlclients.end(); it++)
                         {
                             if((*it)->getNickname() == cmdParams[3])
                                 break;
                         }
+                        for(op = chnlclients.begin(); op != chnlclients.end(); op++)
+                        {
+                            if((*op)->socket_fd == client_fd)
+                                break;
+                        }
                         if (it != chnlclients.end())
                         {
                         	if(cmd[0] == '+')
-                                	channels[channel_name]->setChannelOperator((*it)->socket_fd);
+                            {
+                                channels[channel_name]->setChannelOperator((*it)->socket_fd);
+                                std::vector<Client*> clients_list = channels[channel_name]->getClients(); 
+                                for (size_t i = 0; i < clients_list.size(); i++)
+                                {
+                                    sendChannelUserList(clients_list[i]->socket_fd, channels[channel_name]);
+                                }
+                                char hostname[1024]; // Buffer per ospitare il nome dell'host
+                                hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+                                gethostname(hostname, 1023);
+                                std::string partMessage = ":" + (*op)->getNickname() + "!" + (*op)->getUsername() + "@"+ hostname + " MODE " + channel_name + " +o " + (*it)->getUsername() + "\r\n";
+                                channels[channel_name]->broadcast(partMessage);
+                            }
                         	else if (cmd[0] == '-')
-                                            channels[channel_name]->removeChannelOperator((*it)->socket_fd);
+                            {
+                                channels[channel_name]->removeChannelOperator((*it)->socket_fd);
+                                std::vector<Client*> clients_list = channels[channel_name]->getClients(); 
+                                for (size_t i = 0; i < clients_list.size(); i++)
+                                {
+                                    sendChannelUserList(clients_list[i]->socket_fd, channels[channel_name]);
+                                }
+                                char hostname[1024]; // Buffer per ospitare il nome dell'host
+                                hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+                                gethostname(hostname, 1023);
+                                std::string partMessage = ":" + (*op)->getNickname() + "!" + (*op)->getUsername() + "@"+ hostname + " MODE " + channel_name + " -o " + (*it)->getUsername() + "\r\n";
+                                channels[channel_name]->broadcast(partMessage);
+                            }
                             else
                             {
                                 errorMesg = ":YourServer 421 " + channel_name + " :Unknown mode command\r\n";
@@ -657,7 +686,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                 {
                         if (cmd[0] == '+')
                         {
-                            if (cmdParams.size() == 4 && isAllNum(cmdParams[3]))
+                            if (cmdParams.size() == 4 && isAllNum(cmdParams[3]) && atoi(cmdParams[3].c_str()) < 0)
                             {
                                 channels[channel_name]->setUserLimits(atoi(cmdParams[3].c_str()));
                             }
@@ -704,19 +733,27 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
     }
     else
     {
-        channel_name = cmdParams[1];
-        if (channels[channel_name])
-        {
-            // Il canale esiste, ottieni le sue modalità correnti
-            std::cout << "Eccoci" <<std::endl;
-            std::string currentModes = channels[channel_name]->getCurrentModes(); // restituisce una stringa con le modalità attive
-            std::string modeResponse = ":YourServer 324 " + cmdParams[0] + " " + channel_name + " " + currentModes + "\r\n";
-            std::cout << modeResponse << std::endl;
-            send(client_fd, modeResponse.c_str(), modeResponse.length(), 0);
+        if(cmdParams.size() > 1)
+        {     
+            channel_name = cmdParams[1];
+            if (channels[channel_name])
+            {
+                // Il canale esiste, ottieni le sue modalità correnti
+                std::cout << "Eccoci" <<std::endl;
+                std::string currentModes = channels[channel_name]->getCurrentModes(); // restituisce una stringa con le modalità attive
+                std::string modeResponse = ":YourServer 324 " + cmdParams[0] + " " + channel_name + " " + currentModes + "\r\n";
+                std::cout << modeResponse << std::endl;
+                send(client_fd, modeResponse.c_str(), modeResponse.length(), 0);
+            }
+            else
+            {
+                errorMesg = ":YourServer 421 " + channel_name + " :Unknown channel\r\n";
+                send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+            }
         }
         else
         {
-            errorMesg = ":YourServer 421 " + channel_name + " :Unknown channel\r\n";
+            errorMesg = ":YourServer 461 User" + cmdParams[0] + ":Error Server\r\n";
             send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
         }
         

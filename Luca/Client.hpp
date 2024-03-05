@@ -15,6 +15,7 @@ public:
     void mergeBuffer(char *client_buffer);
     void clearBuffer();
     std::string getBuffer();
+    std::string getUsername();
     
     int socket_fd;
     std::string nickname;

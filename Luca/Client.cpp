@@ -39,3 +39,8 @@ std::string Client::getBuffer()
 {
     return buffer;
 }
+
+std::string Client::getUsername()
+{
+    return username;
+}
