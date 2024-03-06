@@ -125,11 +125,8 @@ void IRCServ::run() {
                                 std::cout << "'" << cmdParams[i] << "' ";
                             }
                             std::cout << std::endl;
-                            if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS"))
+                            if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS" && !clients[i]->auth))
                             {
-                                // la pass e se non funge ti chicca senno ti fai landler.
-                                //std::cerr << "Password contiene: " << getPassword() << std::endl;
-
                                 std::string errorMessage = "Invalid password\r\n";
                                 send(i, errorMessage.c_str(), errorMessage.size(), 0);
                                 //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
@@ -141,15 +138,35 @@ void IRCServ::run() {
                             }
                             else
                             {   
-                        
-                                int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
-                                if (actionRequired == 1) {
-                                    // Il client ha inviato il comando QUIT
-                                    close(i); // Chiude il socket
-                                    FD_CLR(i, &master_set); // Rimuove dal master_set
-                                    delete clients[i]; // Dealloca l'oggetto Client
-                                    clients.erase(i); // Rimuove dalla mappa dei client
-                                    continue; // Vai al prossimo ciclo del loop
+                                if(cmdParams[0] == "PASS" && getPassword() == cmdParams[1])
+                                {
+                                    clients[i]->auth = true;
+                                }
+                                else
+                                {
+                                    if (clients[i]->getIsJoin() == 1 && cmdParams[0] != "CAP")
+                                    {
+                                        std::string errorMessage = "Password required\r\n";
+                                        send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                                        //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
+                                        close(i); // Chiude il socket
+                                        FD_CLR(i, &master_set); // Rimuove dal master_set
+                                        delete clients[i]; // Dealloca l'oggetto Client
+                                        clients.erase(i); // Rimuove dalla mappa dei client
+                                        continue; // Vai al prossimo ciclo del loop
+                                    }
+                                    else
+                                    {
+                                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
+                                        if (actionRequired == 1) {
+                                            // Il client ha inviato il comando QUIT
+                                            close(i); // Chiude il socket
+                                            FD_CLR(i, &master_set); // Rimuove dal master_set
+                                            delete clients[i]; // Dealloca l'oggetto Client
+                                            clients.erase(i); // Rimuove dalla mappa dei client
+                                            continue; // Vai al prossimo ciclo del loop
+                                        }
+                                    }
                                 }
                                 clients[i]->clearBuffer();
                             }

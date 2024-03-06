@@ -45,15 +45,10 @@ void stampaCmdParams(const std::vector<std::string>& cmdParams) {
 int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels, Client &client)
 {
     if (cmdParams.empty()) return 0;
-    // temporaneo
-    (void)client;
-    // Stampa cmdParams per debugging
-    //stampaCmdParams(cmdParams);
 
     const std::string& cmd = cmdParams[0];
     if (cmd == "CAP") {
         if (cmdParams.size() >= 2 && cmdParams[1] == "LS") {
-            // Rispondi con un elenco vuoto di capacità o con CAP NAK per rifiutare la richiesta
             std::string capResponse = ":YourServer CAP * LS :\r\n"; // Elenco vuoto di capacità
             send(client_fd, capResponse.c_str(), capResponse.length(), 0);
         }
@@ -80,7 +75,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         handleUserHostCommand(client_fd, cmdParams);
     } else if (cmd == "KICK") {
         handleUserKickCommand(client_fd, cmdParams, clients, channels);
-        sendChannelUserList(client_fd, channels[clients[client_fd]->getChannel()]);
+        sendChannelUserList(client_fd, channels[clients[client_fd]->channels]);
     } else if (cmd == "MODE") {
         handleModeCommand(client_fd, cmdParams, channels);
     } else if (cmd == "INVITE") {
@@ -143,6 +138,7 @@ void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& c
 
     // Notifica il cambio di nickname
     std::string nickChangeMsg = ":" + oldNick + "!" + user + "@" + host + " NICK :" + newNick + "\r\n";
+    
     send(client_fd, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
 
 }
