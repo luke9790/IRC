@@ -1,3 +1,4 @@
+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
 Road map:
 
 - uselist aggiornata per ogni evento (FATTO)
