@@ -42,7 +42,7 @@ void stampaCmdParams(const std::vector<std::string>& cmdParams) {
     std::cout << std::endl;
 }
 
-int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels, Client &client)
+int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
 {
     if (cmdParams.empty()) return 0;
 
@@ -75,7 +75,6 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
         handleUserHostCommand(client_fd, cmdParams);
     } else if (cmd == "KICK") {
         handleUserKickCommand(client_fd, cmdParams, clients, channels);
-        sendChannelUserList(client_fd, channels[clients[client_fd]->channels]);
     } else if (cmd == "MODE") {
         handleModeCommand(client_fd, cmdParams, channels);
     } else if (cmd == "INVITE") {
@@ -117,7 +116,7 @@ void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
     send(client_fd, message.c_str(), message.length(), 0);
 }
 
-void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
+void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() < 2) {
         // Invia un messaggio di errore al client indicando un comando NICK malformato
         std::string errorMsg = ":YourServer 431 :No nickname given\r\n";
@@ -138,7 +137,10 @@ void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& c
 
     // Notifica il cambio di nickname
     std::string nickChangeMsg = ":" + oldNick + "!" + user + "@" + host + " NICK :" + newNick + "\r\n";
-    
+    for(std::vector<std::string>::iterator it = clients[client_fd]->channels.begin(); it != clients[client_fd]->channels.end(); it++)
+    {
+        channels[*it]->broadcast(nickChangeMsg);
+    }
     send(client_fd, nickChangeMsg.c_str(), nickChangeMsg.length(), 0);
 
 }

@@ -82,7 +82,7 @@ void Channel::addClient(Client* client) {
             return; // Il client è già nel canale
         }
     }
-    client->setChannel(this->name);
+    client->channels.push_back(this->name);
     userCount++;
     clients.push_back(client); // Aggiungi il client al canale
 }
@@ -92,7 +92,12 @@ void Channel::removeClient(Client* client) {
     if (it != clients.end()) {
         clients.erase(it);
         userCount--;
+        std::vector<std::string>::iterator it = std::find(client->channels.begin(), client->channels.end(), client);
+        if (it != client->channels.end()) {
+            client->channels.erase(it);
+        }
     }
+
 }
 
 

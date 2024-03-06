@@ -157,7 +157,7 @@ void IRCServ::run() {
                                     }
                                     else
                                     {
-                                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
+                                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels);
                                         if (actionRequired == 1) {
                                             // Il client ha inviato il comando QUIT
                                             close(i); // Chiude il socket
