@@ -5,14 +5,13 @@ Road map:
 
 - da fare mode nome canale (FATTO)
 
-
 -topic da aggiustare messaggi di "errore"
 
--USER e NICK da aggiustare 
+-USER e NICK da aggiustare
 
 -in generale mettere messaggi di risposta ai comandi
 
-
+- NON FUNZIONANO PIU CORRETTAMENTE GLI OPERATORI DEI CANALI (IL SECONDO CHE ARRIVA DIVENTA OPERATORE, IL PRIMO NO)
 
 Codici di Risposta Numerici:
 001 RPL_WELCOME
