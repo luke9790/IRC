@@ -2,6 +2,7 @@
 #define IRC_SERV_HPP
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdexcept>
@@ -16,6 +17,8 @@
 #include <iostream>
 #include <map>
 #include <cerrno>
+#include <arpa/inet.h>
+
 
 class Handler;
 
@@ -25,6 +28,7 @@ public:
     ~IRCServ();
 
     void run();
+    std::string getPassword();
 
 private:
     int port;

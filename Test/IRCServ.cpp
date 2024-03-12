@@ -1,8 +1,20 @@
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
-IRCServ::IRCServ(int port, const std::string& password) : port(port), password(password) {
+bool isCompleteMessage(const std::string& buffer) {
+    // Cerca la posizione del carattere di ritorno a capo seguito dall'avanti a capo
+    size_t crlfPos = buffer.find("\n");
+
+    // Se troviamo il \r\n, il messaggio è completo
+    return crlfPos != std::string::npos;
+}
+
+IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
     // Create a socket
+    if (pwd == "")
+        password = pwd;
+    else
+        password = ":" + pwd;
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         throw std::runtime_error("Socket creation failed");
@@ -29,12 +41,6 @@ IRCServ::IRCServ(int port, const std::string& password) : port(port), password(p
         close(server_fd);
         throw std::runtime_error("Socket listen failed");
     }
-    // Inizializza i canali predefiniti
-    channels["generale"] = new Channel("generale");
-    channels["programmazione"] = new Channel("programmazione");
-    // Se desideri, puoi anche impostare topic predefiniti qui
-    channels["generale"]->setTopic("Benvenuti nel canale generale");
-    channels["programmazione"]->setTopic("Benvenuti nel canale di programmazione");
 }
 
 IRCServ::~IRCServ() {
@@ -53,6 +59,7 @@ IRCServ::~IRCServ() {
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
+    std::string client_buff;
 
     FD_ZERO(&master_set); // settiamo tutto a zero(cioe' niente da leggere)
     FD_SET(server_fd, &master_set); // aggiungiamo il socket al master set
@@ -84,6 +91,10 @@ void IRCServ::run() {
                     {
                         fcntl(new_client_fd, F_SETFL, O_NONBLOCK); // Set to non-blocking
                         clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
+
+                        // Imposta l'host del client appena connesso
+                        clients[new_client_fd]->setHost(inet_ntoa(client_addr.sin_addr));
+
                         FD_SET(new_client_fd, &master_set); // Add to master set
                         if (new_client_fd > max_fd)
                         max_fd = new_client_fd; // Update max if needed
@@ -106,19 +117,73 @@ void IRCServ::run() {
                     {
                         buffer[nbytes] = '\0'; // Null-terminate what we received and process
                         // Parse the command from the buffer
-                        std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(buffer));
-                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels,*clients[i]);
-                        if (actionRequired == 1) {
-                            // Il client ha inviato il comando QUIT
-                            close(i); // Chiude il socket
-                            FD_CLR(i, &master_set); // Rimuove dal master_set
-                            delete clients[i]; // Dealloca l'oggetto Client
-                            clients.erase(i); // Rimuove dalla mappa dei client
-                            continue; // Vai al prossimo ciclo del loop
+                        clients[i]->setIsJoin();
+                        clients[i]->mergeBuffer(buffer); 
+                        client_buff = clients[i]->getBuffer();
+
+                        if(isCompleteMessage(client_buff))
+                        {
+                            std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));
+                            std::cout << "cmdParams contiene: ";
+                            for (size_t i = 0; i < cmdParams.size(); ++i) {
+                                std::cout << "'" << cmdParams[i] << "' ";
+                            }
+                            std::cout << std::endl;
+                            if ((cmdParams[0] == "PASS" && getPassword() != cmdParams[1]) || (clients[i]->getIsJoin() == 2 && !getPassword().empty() && cmdParams[0] != "PASS" && !clients[i]->auth))
+                            {
+                                std::string errorMessage = "Invalid password\r\n";
+                                send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                                //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
+                                close(i); // Chiude il socket
+                                FD_CLR(i, &master_set); // Rimuove dal master_set
+                                delete clients[i]; // Dealloca l'oggetto Client
+                                clients.erase(i); // Rimuove dalla mappa dei client
+                                continue; // Vai al prossimo ciclo del loop
+                            }
+                            else
+                            {   
+                                if(cmdParams[0] == "PASS" && getPassword() == cmdParams[1])
+                                {
+                                    clients[i]->auth = true;
+                                }
+                                else
+                                {
+                                    if (clients[i]->getIsJoin() == 1 && cmdParams[0] != "CAP")
+                                    {
+                                        std::string errorMessage = "Password required\r\n";
+                                        send(i, errorMessage.c_str(), errorMessage.size(), 0);
+                                        //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
+                                        close(i); // Chiude il socket
+                                        FD_CLR(i, &master_set); // Rimuove dal master_set
+                                        delete clients[i]; // Dealloca l'oggetto Client
+                                        clients.erase(i); // Rimuove dalla mappa dei client
+                                        continue; // Vai al prossimo ciclo del loop
+                                    }
+                                    else
+                                    {
+                                        int actionRequired = Handler::handleCommand(i, cmdParams, clients, channels);
+                                        if (actionRequired == 1) {
+                                            // Il client ha inviato il comando QUIT
+                                            close(i); // Chiude il socket
+                                            FD_CLR(i, &master_set); // Rimuove dal master_set
+                                            delete clients[i]; // Dealloca l'oggetto Client
+                                            clients.erase(i); // Rimuove dalla mappa dei client
+                                            continue; // Vai al prossimo ciclo del loop
+                                        }
+                                    }
+                                }
+                                clients[i]->clearBuffer();
+                            }
                         }
+                        
                     }
                 }
             }
         }
     }
+}
+
+std::string IRCServ::getPassword()
+{
+    return password;
 }
