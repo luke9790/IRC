@@ -33,7 +33,7 @@ void sendChannelUserList(int client_fd, Channel *channel) {
     send(client_fd, response.c_str(), response.length(), 0);
 }
 
-// Funzione per stampare i contenuti di cmdParams
+
 void stampaCmdParams(const std::vector<std::string>& cmdParams) {
     std::cout << "cmdParams contiene: ";
     for (size_t i = 0; i < cmdParams.size(); ++i) {
@@ -53,7 +53,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
             send(client_fd, capResponse.c_str(), capResponse.length(), 0);
         }
     } else if (cmd == "NICK") {
-        handleNickCommand(client_fd, cmdParams, clients);
+        handleNickCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "USER") {
         handleUserCommand(client_fd, cmdParams, clients);
     } else if (cmd == "JOIN") {
@@ -82,22 +82,22 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "TOPIC") {
         handleTopicCommand(client_fd, cmdParams, clients, channels);
     } else {
-        // Comando non riconosciuto
-        // if(!(cmd == "PASS"))
-        // {
-        //     std::string errorMsg = ":YourServer 421 " + cmdParams[0] + " :Unknown command\r\n";
-        //     send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
-        // }
     }
     return 0;
 }
 
-void Handler::sendWelcomeMessages(int client_fd, const std::string& nick) {
-    std::string serverName = "YourServer"; // Customize with your actual server name
-    std::string serverVersion = "YourServerVersion"; // Customize this
-    std::string serverCreationDate = "YourServerCreationDate"; // Customize this
-    std::string username = "YourUsername"; // This should be retrieved or set for the connected user
-    std::string host = "YourHost"; // This should be the client's host or your server's host
+void Handler::sendWelcomeMessages(int client_fd, const std::string& nick, std::map<int, Client*>& clients) {
+
+    Client* client = clients[client_fd];
+    if (!client) {
+        // Gestisci l'errore se il client non è trovato
+        return;
+    }
+    std::string serverName = "SOVIET";
+    std::string serverVersion = "1.0";
+    std::string serverCreationDate = "01/02/2024";
+    std::string username = client->getUsername();
+    std::string host = client->getHost();
 
     // Welcome message
     std::string message = ":" + serverName + " 001 " + nick + " :Welcome to the IRC network " + nick + "!" + username + "@" + host + "\r\n";
@@ -166,7 +166,7 @@ void Handler::checkAndRegisterClient(int client_fd, std::map<int, Client*>& clie
     Client* client = clients[client_fd];
     if (client && client->hasReceivedNick && client->hasReceivedUser && !client->isRegistered) {
         client->isRegistered = true;
-        sendWelcomeMessages(client_fd, client->nickname);
+        sendWelcomeMessages(client_fd, client->nickname, clients);
     }
 }
 
@@ -178,7 +178,6 @@ void Handler::handlePingCommand(int client_fd, const std::vector<std::string>& c
 }
 
 void Handler::handleWhoCommand(int client_fd, const std::vector<std::string>& cmdParams) {
-    // Risposta semplice per demo, adattala alle tue necessità
     std::string whoResponse = ":YourServer 352 " + cmdParams[1] + " ...\r\n";
     whoResponse += ":YourServer 315 " + cmdParams[1] + " :End of WHO list\r\n";
     send(client_fd, whoResponse.c_str(), whoResponse.length(), 0);

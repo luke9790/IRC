@@ -18,11 +18,14 @@ public:
     void clearBuffer();
     std::string getBuffer();
     std::string getUsername();
+    void setHost(const std::string& host);
+    std::string getHost() const;
     
     int socket_fd;
     std::string nickname;
     std::string username;
     std::string realname;
+    std::string host;
     std::vector<std::string> channels;
     std::string buffer;
     bool auth;
@@ -32,7 +35,7 @@ public:
     int isjoin;
 
 private:
-    // Add more client-specific information
+    
 };
 
-#endif // CLIENT_HPP
+#endif

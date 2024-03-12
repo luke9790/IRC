@@ -56,3 +56,12 @@ std::string Client::getUsername()
 {
     return username;
 }
+
+void Client::setHost(const std::string& host) {
+    this->host = host;
+}
+
+// Metodo per ottenere l'host del client.
+std::string Client::getHost() const {
+    return host;
+}

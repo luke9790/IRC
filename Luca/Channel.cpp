@@ -88,17 +88,19 @@ void Channel::addClient(Client* client) {
 }
 
 void Channel::removeClient(Client* client) {
+    // Ricerca e rimozione del client dalla lista dei clienti del canale
     std::vector<Client*>::iterator it = std::find(clients.begin(), clients.end(), client);
     if (it != clients.end()) {
         clients.erase(it);
         userCount--;
-        std::vector<std::string>::iterator it = std::find(client->channels.begin(), client->channels.end(), client);
-        if (it != client->channels.end()) {
-            client->channels.erase(it);
+
+        std::vector<std::string>::iterator it2 = std::find(client->channels.begin(), client->channels.end(), this->name);
+        if (it2 != client->channels.end()) {
+            client->channels.erase(it2);
         }
     }
-
 }
+
 
 
 

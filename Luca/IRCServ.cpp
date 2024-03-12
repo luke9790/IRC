@@ -91,6 +91,10 @@ void IRCServ::run() {
                     {
                         fcntl(new_client_fd, F_SETFL, O_NONBLOCK); // Set to non-blocking
                         clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
+
+                        // Imposta l'host del client appena connesso
+                        clients[new_client_fd]->setHost(inet_ntoa(client_addr.sin_addr));
+
                         FD_SET(new_client_fd, &master_set); // Add to master set
                         if (new_client_fd > max_fd)
                         max_fd = new_client_fd; // Update max if needed

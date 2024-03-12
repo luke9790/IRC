@@ -15,7 +15,7 @@ public:
     static void handleQuitCommand(int client_fd, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels);
 private:
     static void checkAndRegisterClient(int client_fd, std::map<int, Client*>& clients);
-    static void sendWelcomeMessages(int client_fd, const std::string& nick);
+    static void sendWelcomeMessages(int client_fd, const std::string& nick,std::map<int, Client*>& clients );
     static void handleNickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels);
     static void handleUserCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients);
     static void handleListCommand(int client_fd, std::map<std::string, Channel*>& channels, std::map<int, Client*>& clients);
