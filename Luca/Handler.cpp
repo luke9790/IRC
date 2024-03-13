@@ -297,6 +297,10 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
     if (channels.find(channelName) != channels.end()) {
         Channel* channel = channels[channelName];
         if (channel->isClientInChannel(client_fd)) {
+            if(channel->isOperator(client_fd))
+            {
+                channel->unsetOperator(client_fd);
+            }
             Client* client = clients[client_fd];
             channel->removeClient(client);
             std::vector<Client*> clients_list = channel->getClients(); 
@@ -324,6 +328,10 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
     std::map<std::string, Channel*>::iterator ch_it;
     for (ch_it = channels.begin(); ch_it != channels.end(); ch_it++) {
         Channel* channel = ch_it->second;
+        if(channel->isOperator(client_fd))
+        {
+            channel->unsetOperator(client_fd);
+        }
         channel->removeClient(clients.find(client_fd)->second);
         // Qui potresti inviare una notifica ai membri del canale
         Client* client = clients[client_fd];
@@ -414,23 +422,32 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
     std::string channel_name = cmdParams[1];
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
     {
-        std::cout << it->first << std::endl;
+        std::cout << "alla vecchia dentro il for " + it->first << std::endl;
         if (it->second->getName() == channel_name)
         {
+            std::cout << "alla vecchia dentro il for nell'if" + it->first << std::endl;
+            std::cout << it->first << std::endl;
             act_chnl = it->second;
             break;
         }
     }
+    std::cout << "alla vecchia dopo il for" << std::endl;
     std::vector<Client*> chnl_clients = act_chnl->getClients();
     size_t i;
+    std::cout << "alla vecchia primadel secondo for" << std::endl;
     for(i = 0; i < chnl_clients.size(); i++)
     {
+            std::cout << "alla vecchia dentro il secondo for" << std::endl;
+
         if (chnl_clients[i]->getNickname() == cmdParams[2])
         {
+            std::cout << "alla vecchia dentro il secondo for nell-inf" << std::endl;
+
             isInside = true;
             break;
         }
     }
+    std::cout << "alla vecchia dopo il secondo for nell-inf" << std::endl;
     if (act_chnl->isOperator(client_fd) && isInside)
     {
         std::string kickMessage;
@@ -445,15 +462,19 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
         {
             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
         }
+        std::cout << "alla vecchia nel mega if" << std::endl;
         if (act_chnl->isClientInChannel(chnl_clients[i]->socket_fd)) {
             Client* client = clients[chnl_clients[i]->socket_fd];
             char hostname[1024]; // Buffer per ospitare il nome dell'host
             hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
             gethostname(hostname, 1023);
-            std::string partMessage = ":" + chnl_clients[client_fd]->getNickname() + "!" + chnl_clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
+            std::cout << "alla vecchia nel mega if mid 0" << std::endl;
+            std::string partMessage = ":" + clients[client_fd]->getNickname() + "!" + clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
             send(client->socket_fd, partMessage.c_str(), partMessage.length(), 0);
+            std::cout << "alla vecchia nel mega if mid 1" << std::endl;
             act_chnl->removeClient(client);
-            std::vector<Client*> clients_list = act_chnl->getClients(); 
+            std::vector<Client*> clients_list = act_chnl->getClients();
+            std::cout << "alla vecchia nel mega if mid 2" << std::endl;
             for (size_t i = 0; i < clients_list.size(); i++)
             {
                 sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
@@ -461,20 +482,23 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
             // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
             act_chnl->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
             std::cout << partMessage << std::endl;
+            std::cout << "alla vecchia nel mega if end" << std::endl;
         } else {
             // Il client non è nel canale, gestisci l'errore
         }
     }
     else
     {
+        std::cout << "alla vecchia nel mega else beg" << std::endl;
         std::string finalMessage;
         if(act_chnl->isOperator(client_fd))
         {    
-            finalMessage = ":server PRIVMSG " + channel_name + " :non c'è il tipo\r\n";
+            finalMessage = ":Soviet 441 " + clients[client_fd]->getNickname() + " " + cmdParams[2] + " " + cmdParams[1] + " :non c'è il tipo\r\n";
         }
         else
-            finalMessage = ":server PRIVMSG " + channel_name + " :potresti, ma non sei il meglio\r\n";
+            finalMessage = ":Soviet 482 " + clients[client_fd]->getNickname() + " " + cmdParams[1] + " :potresti, ma non sei il meglio\r\n";
         send(client_fd, finalMessage.c_str(), finalMessage.length(), 0);
+        std::cout << "alla vecchia nel mega else end" << std::endl;
     }
     
 }

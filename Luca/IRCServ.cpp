@@ -120,7 +120,7 @@ void IRCServ::run() {
                         clients[i]->setIsJoin();
                         clients[i]->mergeBuffer(buffer); 
                         client_buff = clients[i]->getBuffer();
-
+                        std::cout << "Lucazzo " + client_buff << std::endl;
                         if(isCompleteMessage(client_buff))
                         {
                             std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));

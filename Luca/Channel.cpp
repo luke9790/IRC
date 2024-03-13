@@ -37,6 +37,14 @@ void Channel::inviteClient(int client_fd) {
     }
 }
 
+void Channel::unsetOperator(int client_fd) {
+    std::vector<int>::iterator it = std::find(operators.begin(), operators.end(), client_fd);
+    if (*it == client_fd) {
+        operators.erase(it);
+    }
+}
+
+
 bool Channel::isInvited(int client_fd) const {
     return std::find(invitedClients.begin(), invitedClients.end(), client_fd) != invitedClients.end();
 }
@@ -50,7 +58,7 @@ void Channel::removeInvitedClient(int client_fd) {
     }
 }
 
-Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0), topic_mode(false) {
+Channel::Channel(std::string channelName, int fd) : name(channelName), topic(""), userCount(0), topic_mode(false), user_limits(0), invite_only(false), pwd(""){
     setChannelOperator(fd);
 }
 
