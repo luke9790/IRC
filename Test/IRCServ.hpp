@@ -29,9 +29,9 @@ public:
 
     void run();
     std::string getPassword();
+    int port;
 
 private:
-    int port;
     std::string password;
     int server_fd;
     std::map<int, Client*> clients; // Maps socket fd to Client objects

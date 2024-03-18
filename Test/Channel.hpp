@@ -39,6 +39,7 @@ public:
     void inviteClient(int client_fd); // Invita un client al canale
     bool isInvited(int client_fd) const; // Verifica se un client è stato invitato
     void removeInvitedClient(int client_fd);
+    void unsetOperator(int client_fd);
 
     std::string getCurrentModes() const;
     

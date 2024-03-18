@@ -341,7 +341,6 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
         std::string channelName = channel->getName();
         std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
         channel->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
-        send(client_fd, partMessage.c_str(), partMessage.length(), 0);
         std::cout << partMessage << std::endl;
     }
 
