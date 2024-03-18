@@ -1,6 +1,8 @@
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
+extern bool keepRunning;
+
 bool isCompleteMessage(const std::string& buffer) {
     // Cerca la posizione del carattere di ritorno a capo seguito dall'avanti a capo
     size_t crlfPos = buffer.find("\n");
@@ -45,34 +47,41 @@ IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
 
 IRCServ::~IRCServ() {
 
-    // close(server_fd);
-    // std::map<int, Client*>::iterator it;
-    // for (it = clients.begin(); it != clients.end(); ++it) {
-    //     delete it->second;
-    // }
-    // clients.clear();
+     close(server_fd);
+     std::map<int, Client*>::iterator it;
+     for (it = clients.begin(); it != clients.end(); ++it) {
+         delete it->second;
+     }
+     clients.clear();
 
-    // std::map<std::string, Channel*>::iterator ch_it;
-    // for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
-    //     delete ch_it->second;
-    // }
-    // channels.clear();
+     std::map<std::string, Channel*>::iterator ch_it;
+     for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
+         delete ch_it->second;
+     }
+     channels.clear();
 }
 
 void IRCServ::cleanup()
 {
     close(server_fd);
     std::map<int, Client*>::iterator it;
-    for (it = clients.begin(); it != clients.end(); ++it) {
+    for (it = clients.begin(); it != clients.end(); it++) {
+		close(it->first);
         delete it->second;
     }
     clients.clear();
 
     std::map<std::string, Channel*>::iterator ch_it;
-    for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
+    for (ch_it = channels.begin(); ch_it != channels.end(); ch_it++) {
         delete ch_it->second;
     }
     channels.clear();
+
+	// Infine, chiudiamo il socket del server
+    if (server_fd != -1) {
+        close(server_fd);
+        server_fd = -1; // Imposta il file descriptor a -1 per indicare che è stato chiuso
+    }
 }
 
 void IRCServ::run() {
@@ -84,7 +93,7 @@ void IRCServ::run() {
     FD_SET(server_fd, &master_set); // aggiungiamo il socket al master set
     max_fd = server_fd; // ci serve per tenere traccia del fd piu' alto (necessario per select)
 
-    while (true) 
+    while (keepRunning) 
     {
         read_fds = master_set; // copiamo il master in read perche' select modifica i valori
 
@@ -139,7 +148,6 @@ void IRCServ::run() {
                         clients[i]->setIsJoin();
                         clients[i]->mergeBuffer(buffer); 
                         client_buff = clients[i]->getBuffer();
-                        std::cout << "Lucazzo " + client_buff << std::endl;
                         if(isCompleteMessage(client_buff))
                         {
                             std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));

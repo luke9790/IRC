@@ -72,7 +72,7 @@ int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdPar
     } else if (cmd == "WHO") {
         handleWhoCommand(client_fd, cmdParams);
     } else if (cmd == "USERHOST") {
-        handleUserHostCommand(client_fd, cmdParams);
+        handleUserHostCommand(client_fd);
     } else if (cmd == "KICK") {
         handleUserKickCommand(client_fd, cmdParams, clients, channels);
     } else if (cmd == "MODE") {
@@ -183,9 +183,8 @@ void Handler::handleWhoCommand(int client_fd, const std::vector<std::string>& cm
     send(client_fd, whoResponse.c_str(), whoResponse.length(), 0);
 }
 
-void Handler::handleUserHostCommand(int client_fd, const std::vector<std::string>& cmdParams) {
+void Handler::handleUserHostCommand(int client_fd) {
     // Risposta semplice per demo
-    (void)cmdParams;
     std::string userhostResponse = ":SOVIET 302 :userhost reply\r\n";
     send(client_fd, userhostResponse.c_str(), userhostResponse.length(), 0);
 }

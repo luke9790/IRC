@@ -22,7 +22,7 @@ private:
     
     static void handlePingCommand(int client_fd, const std::vector<std::string>& cmdParams);
     static void handleWhoCommand(int client_fd, const std::vector<std::string>& cmdParams);
-    static void handleUserHostCommand(int client_fd, const std::vector<std::string>& cmdParams);
+    static void handleUserHostCommand(int client_fd);
     static void handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels);
     static void handlePartCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels);
     static void handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels);

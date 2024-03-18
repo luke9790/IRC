@@ -4,14 +4,12 @@
 #include <cstdlib>
 #include "IRCServ.hpp"
 
-IRCServ* globalServerInstance = NULL;
+bool keepRunning = true;
 
 void signalHandler(int signum) {
     std::cout << "Interruzione rilevata, inizio procedura di pulizia..." << std::endl;
-    if (globalServerInstance != NULL) {
-        globalServerInstance->cleanup();
-    }
-    exit(signum);  
+	(void)signum;
+	keepRunning = false;
 }
 
 
@@ -33,9 +31,7 @@ int main(int ac, char* av[])
 
  try {
         IRCServ server(port, password);
-        globalServerInstance = &server; // Imposta il puntatore globale
         server.run();
-        globalServerInstance = NULL; // Resetta il puntatore dopo l'esecuzione
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
