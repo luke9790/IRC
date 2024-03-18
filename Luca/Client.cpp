@@ -3,6 +3,10 @@
 Client::Client(int fd) : socket_fd(fd), isRegistered(false), hasReceivedNick(false), hasReceivedUser(false), isjoin(0) {
 }
 
+Client::~Client() {
+}
+
+
 void Client::setNickname(const std::string& nick) {
     nickname = nick;
 }

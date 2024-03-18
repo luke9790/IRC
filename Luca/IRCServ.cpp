@@ -44,17 +44,36 @@ IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
 }
 
 IRCServ::~IRCServ() {
+
+    // close(server_fd);
+    // std::map<int, Client*>::iterator it;
+    // for (it = clients.begin(); it != clients.end(); ++it) {
+    //     delete it->second;
+    // }
+    // clients.clear();
+
+    // std::map<std::string, Channel*>::iterator ch_it;
+    // for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
+    //     delete ch_it->second;
+    // }
+    // channels.clear();
+}
+
+void IRCServ::cleanup()
+{
+    close(server_fd);
     std::map<int, Client*>::iterator it;
     for (it = clients.begin(); it != clients.end(); ++it) {
         delete it->second;
     }
+    clients.clear();
 
     std::map<std::string, Channel*>::iterator ch_it;
     for (ch_it = channels.begin(); ch_it != channels.end(); ++ch_it) {
         delete ch_it->second;
     }
+    channels.clear();
 }
-
 
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere

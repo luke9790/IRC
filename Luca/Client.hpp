@@ -8,6 +8,7 @@
 class Client {
 public:
     Client(int fd);
+    ~Client();
     void setNickname(const std::string& nick);
     const std::string& getNickname() const;
     bool isInChannel(std::string channel_name);
