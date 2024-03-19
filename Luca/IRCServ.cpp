@@ -4,15 +4,14 @@
 extern bool keepRunning;
 
 bool isCompleteMessage(const std::string& buffer) {
-    // Cerca la posizione del carattere di ritorno a capo seguito dall'avanti a capo
-    size_t crlfPos = buffer.find("\n");
+    // Cerca la posizione del carattere di ritorno a capo
+    size_t pos = buffer.find("\n");
 
-    // Se troviamo il \r\n, il messaggio è completo
-    return crlfPos != std::string::npos;
+    // Se troviamo il \n, il messaggio è completo
+    return pos != std::string::npos;
 }
 
 IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
-    // Create a socket
     if (pwd == "")
         password = pwd;
     else
@@ -22,7 +21,6 @@ IRCServ::IRCServ(int port, const std::string& pwd) : port(port) {
         throw std::runtime_error("Socket creation failed");
     }
 
-    // Set the socket to non-blocking mode
     fcntl(server_fd, F_SETFL, O_NONBLOCK); // funzione per modificare le proprieta' del socket
 
     // Address structure
@@ -61,29 +59,6 @@ IRCServ::~IRCServ() {
      channels.clear();
 }
 
-void IRCServ::cleanup()
-{
-    close(server_fd);
-    std::map<int, Client*>::iterator it;
-    for (it = clients.begin(); it != clients.end(); it++) {
-		close(it->first);
-        delete it->second;
-    }
-    clients.clear();
-
-    std::map<std::string, Channel*>::iterator ch_it;
-    for (ch_it = channels.begin(); ch_it != channels.end(); ch_it++) {
-        delete ch_it->second;
-    }
-    channels.clear();
-
-	// Infine, chiudiamo il socket del server
-    if (server_fd != -1) {
-        close(server_fd);
-        server_fd = -1; // Imposta il file descriptor a -1 per indicare che è stato chiuso
-    }
-}
-
 void IRCServ::run() {
     fd_set master_set, read_fds; // creiamo due set di file descriptor, uno master che tiene traccia di tutto, uno per i socket da leggere
     int max_fd;
@@ -103,48 +78,47 @@ void IRCServ::run() {
 
         for (int i = 0; i <= max_fd; i++)
         {
-            if (FD_ISSET(i, &read_fds))
+            if (FD_ISSET(i, &read_fds)) // restituisce vero se il file descriptor i è nell'insieme read_fds ed è pronto per la lettura
             {
                 if (i == server_fd) // significa che ci sono nuove connessioni in entrata
-                { // Handle new connections
+                {
                     struct sockaddr_in client_addr;
                     socklen_t client_addr_len = sizeof(client_addr);
                     int new_client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len); // una volta creata la struttura come in precedenza, accettiamo la connessione
                     // una volta accetta la connessione, dobbiamo rifare i passaggi precedenti e aggiungere il Client alla nostra mappa del server
                     if (new_client_fd == -1) 
                     {
-                         std::cerr << "Error accepting connection: " << strerror(errno) << std::endl; // DA VALUTARE SE SUFFICIENTE
+                         std::cerr << "Error accepting connection: " << strerror(errno) << std::endl;
                     } 
                     else 
                     {
-                        fcntl(new_client_fd, F_SETFL, O_NONBLOCK); // Set to non-blocking
-                        clients[new_client_fd] = new Client(new_client_fd); // Add to clients map
+                        fcntl(new_client_fd, F_SETFL, O_NONBLOCK); // modifichiamo le proprieta e lo rendiamo non blocking
+                        clients[new_client_fd] = new Client(new_client_fd); 
 
                         // Imposta l'host del client appena connesso
                         clients[new_client_fd]->setHost(inet_ntoa(client_addr.sin_addr));
 
-                        FD_SET(new_client_fd, &master_set); // Add to master set
+                        FD_SET(new_client_fd, &master_set); // aggiungiamo al master set
                         if (new_client_fd > max_fd)
-                        max_fd = new_client_fd; // Update max if needed
+                        max_fd = new_client_fd; // controlliamo se max e' da aggiornare (necessario per select)
                     }
                 }
                 else // significa che abbiamo dati da un client esistente
                 {
-                    // Handle data from clients
                     char buffer[1024];
                     int nbytes = recv(i, buffer, sizeof(buffer), 0); // leggiamo i dati
 
-                    if (nbytes <= 0) // errore o disconnessione del client
+                    if (nbytes <= 0) // errore o disconnessione del client, dobbiamo chiudere il socket e ripulire i dati
                     {
-                        close(i); // Close the socket
-                        FD_CLR(i, &master_set); // Remove from master set
-                        delete clients[i]; // Cleanup
-                        clients.erase(i); // Remove from clients map
+                        close(i); 
+                        FD_CLR(i, &master_set); 
+                        delete clients[i]; 
+                        clients.erase(i); 
                     }
                     else // abbiamo un comando da processare
                     {
-                        buffer[nbytes] = '\0'; // Null-terminate what we received and process
-                        // Parse the command from the buffer
+                        buffer[nbytes] = '\0';
+                        // gestiamo il buffer del singolo client finche' non abbiamo un comando completo
                         clients[i]->setIsJoin();
                         clients[i]->mergeBuffer(buffer); 
                         client_buff = clients[i]->getBuffer();
@@ -160,7 +134,6 @@ void IRCServ::run() {
                             {
                                 std::string errorMessage = "Invalid password\r\n";
                                 send(i, errorMessage.c_str(), errorMessage.size(), 0);
-                                //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
                                 close(i); // Chiude il socket
                                 FD_CLR(i, &master_set); // Rimuove dal master_set
                                 delete clients[i]; // Dealloca l'oggetto Client
@@ -179,7 +152,6 @@ void IRCServ::run() {
                                     {
                                         std::string errorMessage = "Password required\r\n";
                                         send(i, errorMessage.c_str(), errorMessage.size(), 0);
-                                        //Handler::handleCommand(i, {"HELP"}, clients, channels, *clients[i]); // Call handleCommand with HELP as a fallback
                                         close(i); // Chiude il socket
                                         FD_CLR(i, &master_set); // Rimuove dal master_set
                                         delete clients[i]; // Dealloca l'oggetto Client

@@ -1,4 +1,4 @@
-// Channel.hpp
+
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
 
@@ -57,4 +57,4 @@ private:
     std::string pwd;
 };
 
-#endif // CHANNEL_HPP
+#endif

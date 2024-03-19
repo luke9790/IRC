@@ -7,7 +7,7 @@
 bool keepRunning = true;
 
 void signalHandler(int signum) {
-    std::cout << "Interruzione rilevata, inizio procedura di pulizia..." << std::endl;
+    std::cout << "Interruzione rilevata, inizio procedura di pulizia del server..." << std::endl;
 	(void)signum;
 	keepRunning = false;
 }

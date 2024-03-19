@@ -5,7 +5,8 @@
 #include<algorithm>
 #include <string>
 
-class Client {
+class Client 
+{
 public:
     Client(int fd);
     ~Client();

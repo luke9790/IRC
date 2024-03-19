@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-class CommandParser {
+class CommandParser 
+{
 public:
     static std::vector<std::string> parseCommand(const std::string& input);
 };

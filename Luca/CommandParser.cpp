@@ -4,7 +4,8 @@
 #include <string>
 #include <algorithm>
 
-std::vector<std::string> CommandParser::parseCommand(const std::string& input) {
+std::vector<std::string> CommandParser::parseCommand(const std::string& input)
+{
     std::vector<std::string> tokens;
     std::istringstream iss;
     

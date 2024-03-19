@@ -23,9 +23,8 @@ std::string Channel::getCurrentModes() const {
     // Aggiungi i parametri delle modalità dopo le lettere delle modalità, se necessario
     if (user_limits > 0) {
         ss << user_limits;
-        modes += " " + ss.str(); // Converti il numero in stringa e aggiungilo
+        modes += " " + ss.str(); // Converte il numero in stringa e lo aggiunge
     }
-
     return modes;
 }
 
@@ -53,7 +52,6 @@ void Channel::removeInvitedClient(int client_fd) {
     // Cerca l'ID del client nel vettore degli invitati
     std::vector<int>::iterator it = std::find(invitedClients.begin(), invitedClients.end(), client_fd);
     if (it != invitedClients.end()) {
-        // Se trovato, rimuovilo dalla lista
         invitedClients.erase(it);
     }
 }
@@ -80,9 +78,7 @@ void Channel::removeChannelOperator(int fd_op)
     }
 }
 
-Channel::~Channel() {
-    // Pulizia delle risorse, se necessario
-}
+Channel::~Channel() {}
 
 void Channel::addClient(Client* client) {
     for (size_t i = 0; i < clients.size(); ++i) {

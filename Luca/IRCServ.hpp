@@ -28,15 +28,14 @@ public:
     ~IRCServ();
 
     void run();
-    void cleanup();
     std::string getPassword();
     int port;
 
 private:
     std::string password;
     int server_fd;
-    std::map<int, Client*> clients; // Maps socket fd to Client objects
-    std::map<std::string, Channel*> channels; // Maps channel names to Channel objects
+    std::map<int, Client*> clients; 
+    std::map<std::string, Channel*> channels;
 };
 
 #endif

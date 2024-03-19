@@ -90,7 +90,6 @@ void Handler::sendWelcomeMessages(int client_fd, const std::string& nick, std::m
 
     Client* client = clients[client_fd];
     if (!client) {
-        // Gestisci l'errore se il client non è trovato
         return;
     }
     std::string serverName = "SOVIET";
@@ -147,7 +146,6 @@ void Handler::handleNickCommand(int client_fd, const std::vector<std::string>& c
 
 void Handler::handleUserCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients) {
     if (cmdParams.size() < 5) {
-        // Potresti voler inviare un messaggio di errore al client
         return;
     }
     std::string realname = cmdParams[4];
@@ -184,13 +182,12 @@ void Handler::handleWhoCommand(int client_fd, const std::vector<std::string>& cm
 }
 
 void Handler::handleUserHostCommand(int client_fd) {
-    // Risposta semplice per demo
     std::string userhostResponse = ":SOVIET 302 :userhost reply\r\n";
     send(client_fd, userhostResponse.c_str(), userhostResponse.length(), 0);
 }
 
 void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& channels, std::map<int, Client*>& clients) {
-    std::string serverName = "SOVIET"; // Customize with your actual server name
+    std::string serverName = "SOVIET";
     std::string client_name = clients[client_fd]->getNickname();
 
     
@@ -221,7 +218,6 @@ void Handler::handleListCommand(int client_fd, std::map<std::string, Channel*>& 
 
 
 void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    ///controllare se nel canale c'e' la pw e se e' invite only// darti il bona se il canale ha un user limit ed e' pieno o se la pw e' a cazzo e se non sei stato invitato
     if (cmdParams.size() < 2) {
         std::string errorMsg = ":SOVIET 461 " + cmdParams[0] + " :Not enough parameters\r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
@@ -284,11 +280,9 @@ void Handler::handleJoinCommand(int client_fd, const std::vector<std::string>& c
 
 void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() < 2) {
-        // Potresti voler inviare un messaggio di errore al client per comando PART malformato
         return;
     }
     std::string channelName = cmdParams[1];
-    // Assicurati che il nome del canale includa il prefisso '#'
     if (channelName[0] != '#') {
         channelName = "#" + channelName;
     }
@@ -312,14 +306,14 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
             hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
             gethostname(hostname, 1023);
             std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
-            channel->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
+            channel->broadcast(partMessage);
             send(client_fd, partMessage.c_str(), partMessage.length(), 0);
             std::cout << partMessage << std::endl;
         } else {
-            // Il client non è nel canale, gestisci l'errore
+            // Il client non è nel canale
         }
     } else {
-        // Canale non trovato, gestisci l'errore
+        // Canale non trovato
     }
 }
 
@@ -332,32 +326,28 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
             channel->unsetOperator(client_fd);
         }
         channel->removeClient(clients.find(client_fd)->second);
-        // Qui potresti inviare una notifica ai membri del canale
+        
         Client* client = clients[client_fd];
-        char hostname[1024]; // Buffer per ospitare il nome dell'host
-        hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+        char hostname[1024];
+        hostname[1023] = '\0';
         gethostname(hostname, 1023);
         std::string channelName = channel->getName();
         std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
-        channel->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
+        channel->broadcast(partMessage);
         std::cout << partMessage << std::endl;
     }
 
-    // Chiudi il socket
     close(client_fd);
 
-    // Elimina il cliente e rimuovilo dalla mappa dei clienti
     std::map<int, Client*>::iterator client_it = clients.find(client_fd);
     if (client_it != clients.end()) {
         delete client_it->second;
         clients.erase(client_it);
     }
-    // Non possiamo rimuovere client_fd da master_set qui, dovrebbe essere gestito nel server principale
 }
 
 void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() < 3) {
-        // Potresti voler inviare un messaggio di errore al client per comando PRIVMSG malformato
         return;
     }
     std::string target = cmdParams[1];
@@ -372,14 +362,14 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
         mittenteNickname = clients[client_fd]->getNickname();
     } else {
         // Gestire il caso in cui il client_fd non è trovato nei client connessi
-        return; // o invia un messaggio di errore appropriato
+        return;
     }
 
     if (target[0] == '#') { // Il messaggio è destinato a un canale
         if (channels.find(target) != channels.end()) {
             Channel* channel = channels[target];
             if (!channel->isClientInChannel(client_fd)) {
-                // Se il mittente non è nel canale, invia un messaggio di errore al mittente
+                // il mittente non è nel canale, invia un messaggio di errore al mittente
                 std::string errorMsg = ":SOVIET 404 " + target + " :Cannot send to channel\r\n";
                 send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
                 return;
@@ -420,32 +410,22 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
     std::string channel_name = cmdParams[1];
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
     {
-        std::cout << "alla vecchia dentro il for " + it->first << std::endl;
         if (it->second->getName() == channel_name)
         {
-            std::cout << "alla vecchia dentro il for nell'if" + it->first << std::endl;
-            std::cout << it->first << std::endl;
             act_chnl = it->second;
             break;
         }
     }
-    std::cout << "alla vecchia dopo il for" << std::endl;
     std::vector<Client*> chnl_clients = act_chnl->getClients();
     size_t i;
-    std::cout << "alla vecchia primadel secondo for" << std::endl;
     for(i = 0; i < chnl_clients.size(); i++)
     {
-            std::cout << "alla vecchia dentro il secondo for" << std::endl;
-
         if (chnl_clients[i]->getNickname() == cmdParams[2])
         {
-            std::cout << "alla vecchia dentro il secondo for nell-inf" << std::endl;
-
             isInside = true;
             break;
         }
     }
-    std::cout << "alla vecchia dopo il secondo for nell-inf" << std::endl;
     if (act_chnl->isOperator(client_fd) && isInside)
     {
         std::string kickMessage;
@@ -460,29 +440,25 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
         {
             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
         }
-        std::cout << "alla vecchia nel mega if" << std::endl;
         if (act_chnl->isClientInChannel(chnl_clients[i]->socket_fd)) {
             Client* client = clients[chnl_clients[i]->socket_fd];
-            char hostname[1024]; // Buffer per ospitare il nome dell'host
-            hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+            char hostname[1024];
+            hostname[1023] = '\0';
             gethostname(hostname, 1023);
-            std::cout << "alla vecchia nel mega if mid 0" << std::endl;
             std::string partMessage = ":" + clients[client_fd]->getNickname() + "!" + clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
             send(client->socket_fd, partMessage.c_str(), partMessage.length(), 0);
-            std::cout << "alla vecchia nel mega if mid 1" << std::endl;
             act_chnl->removeClient(client);
             std::vector<Client*> clients_list = act_chnl->getClients();
-            std::cout << "alla vecchia nel mega if mid 2" << std::endl;
             for (size_t i = 0; i < clients_list.size(); i++)
             {
                 sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
             }
             // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
-            act_chnl->broadcast(partMessage); // Supponendo che tu abbia un metodo broadcast per inviare messaggi a tutti i client nel canale
+            act_chnl->broadcast(partMessage);
             std::cout << partMessage << std::endl;
             std::cout << "alla vecchia nel mega if end" << std::endl;
         } else {
-            // Il client non è nel canale, gestisci l'errore
+            // Il client non è nel canale
         }
     }
     else
@@ -504,7 +480,6 @@ void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string
 
 void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() != 3) {
-        // Errore: Parametri sbagliati
         std::string errorMsg = ":SOVIET 461 " + cmdParams[0] + " :Wrong number of parameters. \r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
@@ -540,7 +515,6 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
         if (it->second->getNickname() == targetNickname) {
             found = true;
             // Invia l'invito al destinatario
-            // Aggiunge l'invito al canale
             channel->inviteClient(it->first); // Utilizza l'identificativo del client
 
             std::string inviteMsg = ":" + sender->getNickname() + "!YourHost INVITE " + targetNickname + " :" + channelName + "\r\n";
@@ -677,8 +651,8 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                                 {
                                     sendChannelUserList(clients_list[i]->socket_fd, channels[channel_name]);
                                 }
-                                char hostname[1024]; // Buffer per ospitare il nome dell'host
-                                hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+                                char hostname[1024];
+                                hostname[1023] = '\0';
                                 gethostname(hostname, 1023);
                                 std::string partMessage = ":" + (*op)->getNickname() + "!" + (*op)->getUsername() + "@"+ hostname + " MODE " + channel_name + " +o " + (*it)->getUsername() + "\r\n";
                                 channels[channel_name]->broadcast(partMessage);
@@ -691,8 +665,8 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                                 {
                                     sendChannelUserList(clients_list[i]->socket_fd, channels[channel_name]);
                                 }
-                                char hostname[1024]; // Buffer per ospitare il nome dell'host
-                                hostname[1023] = '\0'; // Assicurati che ci sia il terminatore alla fine
+                                char hostname[1024];
+                                hostname[1023] = '\0';
                                 gethostname(hostname, 1023);
                                 std::string partMessage = ":" + (*op)->getNickname() + "!" + (*op)->getUsername() + "@"+ hostname + " MODE " + channel_name + " -o " + (*it)->getUsername() + "\r\n";
                                 channels[channel_name]->broadcast(partMessage);
@@ -788,11 +762,8 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
 }
 
 
-void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
-    /*if (cmdParams.size() < 2) {
-        // Il comando è malformato, invia un messaggio di errore al client
-        return;
-    }*/
+void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
+{
     std::string channelName = cmdParams[1];
     // Assicurati che il nome del canale includa il prefisso '#'
     if (channelName[0] != '#') {
