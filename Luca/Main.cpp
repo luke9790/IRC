@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Main.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lmasetti <lmasetti@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/21 14:26:11 by lmasetti          #+#    #+#             */
+/*   Updated: 2024/03/21 14:26:11 by lmasetti         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <signal.h>
 #include <unistd.h>
 #include <iostream>
@@ -7,7 +19,7 @@
 bool keepRunning = true;
 
 void signalHandler(int signum) {
-    std::cout << "Interruzione rilevata, inizio procedura di pulizia del server..." << std::endl;
+    std::cout << "\nInterruzione rilevata, inizio procedura di pulizia del server..." << std::endl;
 	(void)signum;
 	keepRunning = false;
 }

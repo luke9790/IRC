@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   IRCServ.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lmasetti <lmasetti@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/21 14:26:05 by lmasetti          #+#    #+#             */
+/*   Updated: 2024/03/21 14:26:06 by lmasetti         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "IRCServ.hpp"
 #include "Handler.hpp"
 
@@ -72,9 +84,11 @@ void IRCServ::run() {
     {
         read_fds = master_set; // copiamo il master in read perche' select modifica i valori
 
-        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) { // cerca nel read se ci sono fd pronti da leggere
+        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1 && keepRunning) { // cerca nel read se ci sono fd pronti da leggere
             throw std::runtime_error("Select error");
         }
+        else if(!keepRunning)
+            break;
 
         for (int i = 0; i <= max_fd; i++)
         {

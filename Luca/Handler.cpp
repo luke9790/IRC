@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Handler.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lmasetti <lmasetti@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/03/21 14:25:59 by lmasetti          #+#    #+#             */
+/*   Updated: 2024/03/21 14:25:59 by lmasetti         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Handler.hpp"
 #include "IRCServ.hpp"
 
@@ -31,15 +43,6 @@ void sendChannelUserList(int client_fd, Channel *channel) {
     }
     std::string response = ":YourServer 353 nickname @ " + channel->getName() + " :" + userList + "\r\n";
     send(client_fd, response.c_str(), response.length(), 0);
-}
-
-
-void stampaCmdParams(const std::vector<std::string>& cmdParams) {
-    std::cout << "cmdParams contiene: ";
-    for (size_t i = 0; i < cmdParams.size(); ++i) {
-        std::cout << "'" << cmdParams[i] << "' ";
-    }
-    std::cout << std::endl;
 }
 
 int Handler::handleCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
@@ -308,12 +311,15 @@ void Handler::handlePartCommand(int client_fd, const std::vector<std::string>& c
             std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
             channel->broadcast(partMessage);
             send(client_fd, partMessage.c_str(), partMessage.length(), 0);
-            std::cout << partMessage << std::endl;
         } else {
             // Il client non è nel canale
+            std::string errorMsg = "442 " + channelName + " :You're not on that channel\r\n";
+            send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         }
     } else {
         // Canale non trovato
+        std::string errorMsg = "403 " + channelName + " :No such channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
     }
 }
 
@@ -334,7 +340,6 @@ void Handler::handleQuitCommand(int client_fd, std::map<int, Client*>& clients, 
         std::string channelName = channel->getName();
         std::string partMessage = ":" + client->nickname + "!" + client->username + "@"+ hostname + " PART " + channelName + " :Reason" + "\r\n";
         channel->broadcast(partMessage);
-        std::cout << partMessage << std::endl;
     }
 
     close(client_fd);
@@ -402,85 +407,143 @@ void Handler::handlePrivmsgCommand(int client_fd, const std::vector<std::string>
     }
 }
 
+// void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
+// {
+//     bool isInside = false;
+//     Channel *act_chnl = NULL;
+//     std::string channel_name = cmdParams[1];
+//     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
+//     {
+//         if (it->second->getName() == channel_name)
+//         {
+//             act_chnl = it->second;
+//             break;
+//         }
+//     }
+//     std::vector<Client*> chnl_clients = act_chnl->getClients();
+//     size_t i;
+//     for(i = 0; i < chnl_clients.size(); i++)
+//     {
+//         if (chnl_clients[i]->getNickname() == cmdParams[2])
+//         {
+//             isInside = true;
+//             break;
+//         }
+//     }
+//     if (act_chnl->isOperator(client_fd) && isInside)
+//     {
+//         std::string kickMessage;
+//         std::string finalMessage;
+//         kickMessage = cmdParams[3];
+//         kickMessage.erase(0, 1);
+//         if (kickMessage != "User")
+//         {
+//             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " " + kickMessage + "\r\n";
+//         }
+//         else
+//         {
+//             finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
+//         }
+//         if (act_chnl->isClientInChannel(chnl_clients[i]->socket_fd)) {
+//             Client* client = clients[chnl_clients[i]->socket_fd];
+//             char hostname[1024];
+//             hostname[1023] = '\0';
+//             gethostname(hostname, 1023);
+//             std::string partMessage = ":" + clients[client_fd]->getNickname() + "!" + clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
+//             send(client->socket_fd, partMessage.c_str(), partMessage.length(), 0);
+//             act_chnl->removeClient(client);
+//             std::vector<Client*> clients_list = act_chnl->getClients();
+//             for (size_t i = 0; i < clients_list.size(); i++)
+//             {
+//                 sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
+//             }
+//             // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
+//             act_chnl->broadcast(partMessage);
+//         } else {
+//             // Il client non è nel canale
+//             std::string errorMsg = ":Soviet 441 " + cmdParams[2] + " " + channel_name + " :Client is not on that channel\r\n";
+//             send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+//         }
+//     }
+//     else
+//     {
+//         std::string finalMessage;
+//         if(act_chnl->isOperator(client_fd))
+//         {    
+//             finalMessage = ":Soviet 441 " + clients[client_fd]->getNickname() + " " + cmdParams[2] + " " + cmdParams[1] + " :You're not channel operator\r\n";
+//         }
+//         else
+//             finalMessage = ":Soviet 482 " + clients[client_fd]->getNickname() + " " + cmdParams[1] + " :You're not channel operator\r\n";
+//         send(client_fd, finalMessage.c_str(), finalMessage.length(), 0);
+//     }
+// }
 
 void Handler::handleUserKickCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    if (cmdParams.size() < 3) {
+        std::string errorMsg = ":YourServerName 461 " + clients[client_fd]->getNickname() + " KICK :Not enough parameters\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    std::string channelName = cmdParams[1];
+    if (channels.find(channelName) == channels.end()) {
+        std::string errorMsg = ":YourServerName 403 " + channelName + " :No such channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    Channel* act_chnl = channels[channelName];
+    if (!act_chnl->isOperator(client_fd)) {
+        std::string errorMsg = ":Soviet 441 " + clients[client_fd]->getNickname() + " " + cmdParams[2] + " " + cmdParams[1] + " :You're not channel operator\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    std::string targetNick = cmdParams[2];
+    std::string reason = "No reason specified";
     
-    bool isInside = false;
-    Channel *act_chnl = NULL;
-    std::string channel_name = cmdParams[1];
-    for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); it++)
-    {
-        if (it->second->getName() == channel_name)
-        {
-            act_chnl = it->second;
+    if (cmdParams.size() > 3 && cmdParams[3][0] == ':') {
+        reason = "";
+        for (size_t i = 3; i < cmdParams.size(); ++i) {
+            if (!reason.empty()) reason += " ";
+            reason += cmdParams[i];
+        }
+    }
+
+    Client* client = NULL;
+    for (size_t i = 0; i < act_chnl->getClients().size(); ++i) {
+        if (act_chnl->getClients()[i]->getNickname() == targetNick) {
+            client = act_chnl->getClients()[i];
             break;
         }
     }
-    std::vector<Client*> chnl_clients = act_chnl->getClients();
-    size_t i;
-    for(i = 0; i < chnl_clients.size(); i++)
-    {
-        if (chnl_clients[i]->getNickname() == cmdParams[2])
-        {
-            isInside = true;
-            break;
-        }
+
+    if (client == NULL) {
+        std::string errorMsg = ":YourServerName 441 " + cmdParams[2] + " " + channelName + " :Client is not on that channel\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
     }
-    if (act_chnl->isOperator(client_fd) && isInside)
+    char hostname[1024];
+    hostname[1023] = '\0';
+    gethostname(hostname, 1023);
+    std::string kickMessage = ":" + clients[client_fd]->getNickname() + "!" + clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " " + reason + "\r\n";
+    send(client->socket_fd, kickMessage.c_str(), kickMessage.length(), 0);
+    act_chnl->removeClient(client);
+    std::vector<Client*> clients_list = act_chnl->getClients();
+    for (size_t i = 0; i < clients_list.size(); i++)
     {
-        std::string kickMessage;
-        std::string finalMessage;
-        kickMessage = cmdParams[3];
-        kickMessage.erase(0, 1);
-        if (kickMessage != "User")
-        {
-            finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " " + kickMessage + "\r\n";
-        }
-        else
-        {
-            finalMessage = "KICK " + act_chnl->getName() + " " + chnl_clients[i]->getNickname() + " :" + clients[client_fd]->getNickname() + " diocane del dio" + "\r\n";
-        }
-        if (act_chnl->isClientInChannel(chnl_clients[i]->socket_fd)) {
-            Client* client = clients[chnl_clients[i]->socket_fd];
-            char hostname[1024];
-            hostname[1023] = '\0';
-            gethostname(hostname, 1023);
-            std::string partMessage = ":" + clients[client_fd]->getNickname() + "!" + clients[client_fd]->getUsername() + "@"+ hostname + " KICK " + act_chnl->getName() + " "+ client->username + " :Reason" + "\r\n";
-            send(client->socket_fd, partMessage.c_str(), partMessage.length(), 0);
-            act_chnl->removeClient(client);
-            std::vector<Client*> clients_list = act_chnl->getClients();
-            for (size_t i = 0; i < clients_list.size(); i++)
-            {
-                sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
-            }
-            // NOTIFICHIAMO a tutti che qualcuno e' uscito dal canale
-            act_chnl->broadcast(partMessage);
-            std::cout << partMessage << std::endl;
-            std::cout << "alla vecchia nel mega if end" << std::endl;
-        } else {
-            // Il client non è nel canale
-        }
+        sendChannelUserList(clients_list[i]->socket_fd, act_chnl);
     }
-    else
-    {
-        std::cout << "alla vecchia nel mega else beg" << std::endl;
-        std::string finalMessage;
-        if(act_chnl->isOperator(client_fd))
-        {    
-            finalMessage = ":Soviet 441 " + clients[client_fd]->getNickname() + " " + cmdParams[2] + " " + cmdParams[1] + " :non c'è il tipo\r\n";
-        }
-        else
-            finalMessage = ":Soviet 482 " + clients[client_fd]->getNickname() + " " + cmdParams[1] + " :potresti, ma non sei il meglio\r\n";
-        send(client_fd, finalMessage.c_str(), finalMessage.length(), 0);
-        std::cout << "alla vecchia nel mega else end" << std::endl;
-    }
-    
+    act_chnl->broadcast(kickMessage);
 }
+
+
 
 
 void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
     if (cmdParams.size() != 3) {
-        std::string errorMsg = ":SOVIET 461 " + cmdParams[0] + " :Wrong number of parameters. \r\n";
+        // Errore: Parametri sbagliati
+        std::string errorMsg = ":YourServer 461 " + cmdParams[0] + " :Wrong number of parameters. \r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
     }
@@ -488,13 +551,9 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
     std::string targetNickname = cmdParams[1];
     std::string channelName = cmdParams[2];
 
-     if (channelName[0] != '#') {
-        channelName = "#" + channelName;
-    }
-
     // Verifica se il canale esiste
     if (channels.find(channelName) == channels.end()) {
-        std::string errorMsg = ":SOVIET 403 " + channelName + " :No such channel\r\n";
+        std::string errorMsg = ":YourServer 403 " + channelName + " :No such channel\r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
     }
@@ -504,7 +563,7 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
 
     // Verifica se il mittente è nel canale
     if (!channel->isClientInChannel(client_fd)) {
-        std::string errorMsg = ":SOVIET 442 " + channelName + " :You're not on that channel\r\n";
+        std::string errorMsg = ":YourServer 442 " + channelName + " :You're not on that channel\r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         return;
     }
@@ -515,13 +574,11 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
         if (it->second->getNickname() == targetNickname) {
             found = true;
             // Invia l'invito al destinatario
-            channel->inviteClient(it->first); // Utilizza l'identificativo del client
-
             std::string inviteMsg = ":" + sender->getNickname() + "!YourHost INVITE " + targetNickname + " :" + channelName + "\r\n";
             send(it->first, inviteMsg.c_str(), inviteMsg.length(), 0);
 
             // Feedback al mittente
-            std::string feedbackMsg = ":SOVIET 341 " + targetNickname + " " + channelName + "\r\n";
+            std::string feedbackMsg = ":YourServer 341 " + targetNickname + " " + channelName + "\r\n";
             send(client_fd, feedbackMsg.c_str(), feedbackMsg.length(), 0);
             break;
         }
@@ -530,11 +587,10 @@ void Handler::handleUserInviteCommand(int client_fd, const std::vector<std::stri
 
     if (!found) {
         // Utente non trovato
-        std::string errorMsg = ":SOVIET 401 " + targetNickname + " :No such nick/channel\r\n";
+        std::string errorMsg = ":YourServer 401 " + targetNickname + " :No such nick/channel\r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
     }
 }
-
 
 void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<std::string, Channel*>& channels) {
 
@@ -545,7 +601,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
     if(cmdParams.size() > 2)
     {
         channel_name = cmdParams[1];
-        if (channels[channel_name])
+        if (channels[channel_name] && (channels[channel_name]->isOperator(client_fd) || cmdParams[2] == "+b"))
         {
             std::string pm = "+-";
             std::string cmd_mode = "itkolb";
@@ -729,8 +785,9 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
         }
         else
         {
-            errorMesg = ":YourServer 421 " + channel_name + " :Unknown\r\n";
-            send(client_fd, errorMesg.c_str(), errorMesg.length(), 0);
+            // L'utente tenta di cambiare le modalità senza essere un operatore del canale
+            std::string errorMsg = ":SOVIET 482 " + channel_name + " :You're not channel operator\r\n";
+            send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
         }
     }
     else
@@ -743,7 +800,6 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                 // Il canale esiste, ottieni le sue modalità correnti
                 std::string currentModes = channels[channel_name]->getCurrentModes(); // restituisce una stringa con le modalità attive
                 std::string modeResponse = ":SOVIET 324 " + cmdParams[0] + " " + channel_name + " " + currentModes + "\r\n";
-                std::cout << modeResponse << std::endl;
                 send(client_fd, modeResponse.c_str(), modeResponse.length(), 0);
             }
             else
@@ -762,65 +818,55 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
 }
 
 
-void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels)
-{
+void Handler::handleTopicCommand(int client_fd, const std::vector<std::string>& cmdParams, std::map<int, Client*>& clients, std::map<std::string, Channel*>& channels) {
+    if (cmdParams.size() < 2) {
+        std::string errorMsg = ":SOVIET 461 " + clients[client_fd]->getNickname() + " TOPIC :Not enough parameters\r\n";
+        send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
     std::string channelName = cmdParams[1];
     // Assicurati che il nome del canale includa il prefisso '#'
     if (channelName[0] != '#') {
         channelName = "#" + channelName;
     }
 
-    if (channels.find(channelName) != channels.end()) {
-        Channel* channel = channels[channelName];
-        Client* client = clients[client_fd];
-
-        // Verifica se il client è un operatore del canale
-        if (channel->isOperator(client_fd)) {
-            // Il client è un operatore, controlla se è specificato un nuovo topic
-            if (cmdParams.size() >= 3) {
-                std::string newTopic = cmdParams[2];
-                for (size_t i = 3; i < cmdParams.size(); ++i) {
-                    newTopic += " " + cmdParams[i];
-                }
-                channel->setTopic(newTopic);
-
-                // Invia conferma al client
-                std::string response = ":SOVIET 332 " + client->getNickname() + " " + channelName + " " + newTopic + "\r\n";
-                send(client_fd, response.c_str(), response.length(), 0);
-            } else {
-                // Il comando non specifica un nuovo topic, invia il topic attuale al client
-                std::string topic = channel->getTopic();
-                std::string response = ":SOVIET 332 " + client->getNickname() + " " + channelName + " " + topic + "\r\n";
-                send(client_fd, response.c_str(), response.length(), 0);
-            }
-        } else {
-            // Il client non è un operatore, invia il topic attuale al client
-            if (cmdParams.size() >= 3 && channel->getMode_t()) {
-                std::string newTopic = cmdParams[2];
-                for (size_t i = 3; i < cmdParams.size(); ++i) {
-                    newTopic += " " + cmdParams[i];
-                }
-                channel->setTopic(newTopic);
-
-                // Invia conferma al client
-                std::string response = ":SOVIET 332 " + client->getNickname() + " " + channelName + " " + newTopic + "\r\n";
-                send(client_fd, response.c_str(), response.length(), 0);
-            }
-            else if(cmdParams.size() >= 3 && !channel->getMode_t())
-            {
-
-            }
-            else
-            {
-                // Il comando non specifica un nuovo topic, invia il topic attuale al client
-                std::string topic = channel->getTopic();
-                std::string response = ":SOVIET 332 " + client->getNickname() + " " + channelName + " " + topic + "\r\n";
-                send(client_fd, response.c_str(), response.length(), 0);
-            }
-        }
-    } else {
+    if (channels.find(channelName) == channels.end()) {
         // Canale non trovato, invia un messaggio di errore
         std::string errorMsg = ":SOVIET 403 " + clients[client_fd]->getNickname() + " " + channelName + " :No such channel\r\n";
         send(client_fd, errorMsg.c_str(), errorMsg.length(), 0);
+        return;
+    }
+
+    Channel* channel = channels[channelName];
+    Client* client = clients[client_fd];
+    bool isOperator = channel->isOperator(client_fd);
+
+    // Se non è specificato un nuovo topic, invia il topic attuale al client
+    if (cmdParams.size() == 2) {
+        std::string topic = channel->getTopic();
+        if (topic.empty()) {
+            std::string noTopicMsg = ":SOVIET 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n";
+            send(client_fd, noTopicMsg.c_str(), noTopicMsg.length(), 0);
+        } else {
+            std::string topicMsg = ":SOVIET 332 " + client->getNickname() + " " + channelName + " :" + topic + "\r\n";
+            send(client_fd, topicMsg.c_str(), topicMsg.length(), 0);
+        }
+    } else if (!isOperator && channel->getMode_t()) {
+        // Il client non è un operatore e il canale ha la modalità +t
+        std::string notOpMsg = ":SOVIET 482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n";
+        send(client_fd, notOpMsg.c_str(), notOpMsg.length(), 0);
+    } else {
+        // Il client è un operatore o il canale non ha la modalità +t, imposta il nuovo topic
+        std::string newTopic = cmdParams[2];
+        for (size_t i = 3; i < cmdParams.size(); ++i) {
+            newTopic += " " + cmdParams[i];
+        }
+        channel->setTopic(newTopic);
+
+        // Invia il messaggio di topic cambiato a tutti gli utenti nel canale
+        std::string topicChangeMsg = ":SOVIET TOPIC " + channelName + " :" + newTopic + "\r\n";
+        channel->broadcast(topicChangeMsg);
     }
 }
+
