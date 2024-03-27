@@ -6,7 +6,7 @@
 /*   By: lmasetti <lmasetti@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 14:26:05 by lmasetti          #+#    #+#             */
-/*   Updated: 2024/03/21 14:26:06 by lmasetti         ###   ########.fr       */
+/*   Updated: 2024/03/27 16:18:30 by lmasetti         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -139,8 +139,10 @@ void IRCServ::run() {
                         if(isCompleteMessage(client_buff))
                         {
                             std::vector<std::string> cmdParams = CommandParser::parseCommand(std::string(client_buff));
+                            if(cmdParams.empty())
+                                continue;
                             std::cout << "cmdParams contiene: ";
-                            for (size_t i = 0; i < cmdParams.size(); ++i) {
+                            for (size_t i = 0; i < cmdParams.size(); i++) {
                                 std::cout << "'" << cmdParams[i] << "' ";
                             }
                             std::cout << std::endl;

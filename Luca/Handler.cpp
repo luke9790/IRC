@@ -6,7 +6,7 @@
 /*   By: lmasetti <lmasetti@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/21 14:25:59 by lmasetti          #+#    #+#             */
-/*   Updated: 2024/03/21 14:25:59 by lmasetti         ###   ########.fr       */
+/*   Updated: 2024/03/27 16:21:58 by lmasetti         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -744,7 +744,7 @@ void Handler::handleModeCommand(int client_fd, const std::vector<std::string>& c
                 {
                         if (cmd[0] == '+')
                         {
-                            if (cmdParams.size() == 4 && isAllNum(cmdParams[3]) && atoi(cmdParams[3].c_str()) < 0)
+                            if (cmdParams.size() == 4 && isAllNum(cmdParams[3]) && atoi(cmdParams[3].c_str()) > 0)
                             {
                                 channels[channel_name]->setUserLimits(atoi(cmdParams[3].c_str()));
                             }
